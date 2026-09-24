@@ -1,0 +1,13 @@
+[package]
+name = "ghost_hil_microkernel"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "ghost_hil_microkernel"
+path = "src/lib.rs"
+
+[dependencies]
+
+[build-dependencies]
+cc = "1"

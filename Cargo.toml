@@ -1,0 +1,23 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/ghost-core-engine",
+    "crates/ghost-propulsion-drive",
+    "crates/ghost-multiseed-gravity",
+    "crates/ghost-kinematic-wake",
+    "crates/ghost-optics-lensing",
+    "crates/ghost-lanr-interface",
+    "crates/ghost-hil-microkernel",
+    "crates/ghost-gpu-acceleration",
+]
+
+[workspace.dependencies]
+rug = { version = "=1.24.0", default-features = false, features = ["integer", "float"] }
+glam = "0.24"
+tokio = { version = "1.35", features = ["full"] }
+wgpu = "0.19"
+cust = "0.3"
+
+[profile.release]
+opt-level = 3
+lto = "thin"

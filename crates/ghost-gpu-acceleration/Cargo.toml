@@ -1,0 +1,17 @@
+[package]
+name = "ghost_gpu_acceleration"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "ghost_gpu_acceleration"
+path = "src/lib.rs"
+
+[features]
+default = []
+cuda = ["dep:cust"]
+webgpu = ["dep:wgpu"]
+
+[dependencies]
+cust = { workspace = true, optional = true }
+wgpu = { workspace = true, optional = true }

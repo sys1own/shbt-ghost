@@ -1,0 +1,568 @@
+{
+  "matrix": "shbt-ghost master verification",
+  "gates_total": 70,
+  "gates_passed": 70,
+  "all_pass": true,
+  "gates": [
+    {
+      "id": "GATE-01",
+      "sector": "Topological Coupling",
+      "metric": "alpha_seed",
+      "bound": "1.3258e-51 +/- 1e-4",
+      "value": "1.3258316e-51",
+      "status": "PASS"
+    },
+    {
+      "id": "GATE-02",
+      "sector": "Mass Generation",
+      "metric": "M_seed",
+      "bound": "1.0e-6 M_sun +/- 1e-10",
+      "value": "9.999987e-07",
+      "status": "PASS"
+    },
+    {
+      "id": "GATE-03",
+      "sector": "Bit Overflow",
+      "metric": "DeltaN_0",
+      "bound": "7.542426e44 bits",
+      "value": "7.542426e+44",
+      "status": "PASS"
+    },
+    {
+      "id": "GATE-04",
+      "sector": "Entropy Debt",
+      "metric": "P_debt",
+      "bound": "906.00 kW +/- 0.01",
+      "value": "905.99880",
+      "status": "PASS"
+    },
+    {
+      "id": "GATE-05",
+      "sector": "Safety Boundary",
+      "metric": "R_congestion",
+      "bound": "2.954e15 m max",
+      "value": "2.9540e+15",
+      "status": "PASS"
+    },
+    {
+      "id": "GATE-06",
+      "sector": "Math Precision",
+      "metric": "MPFR width",
+      "bound": "exact 512-bit",
+      "value": "512",
+      "status": "PASS"
+    },
+    {
+      "id": "GATE-07",
+      "sector": "Mass Balance",
+      "metric": "residual",
+      "bound": "< 1e-120",
+      "value": "0.0",
+      "status": "PASS"
+    },
+    {
+      "id": "GATE-08",
+      "sector": "Winding Topo",
+      "metric": "d1 = gcd(26,312)",
+      "bound": "= 26",
+      "value": "26",
+      "status": "PASS"
+    },
+    {
+      "id": "GATE-09",
+      "sector": "Horizon Limit",
+      "metric": "N_total = e^33",
+      "bound": "2.99200722e14",
+      "value": "2.99200722e+14",
+      "status": "PASS"
+    },
+    {
+      "id": "GATE-10",
+      "sector": "Landauer Cost",
+      "metric": "C_get = max(1,log2|R|)",
+      "bound": ">= 0",
+      "value": ">=0",
+      "status": "PASS"
+    },
+    {
+      "id": "GATE-11",
+      "sector": "Metric Flatness",
+      "metric": "||g-eta||",
+      "bound": "< 1e-16",
+      "value": "<1e-16",
+      "status": "PASS"
+    },
+    {
+      "id": "GATE-12",
+      "sector": "Memory Floor",
+      "metric": "area law",
+      "bound": "N <= A/(4Lp^2 ln2)",
+      "value": "ok",
+      "status": "PASS"
+    },
+    {
+      "id": "GATE-13",
+      "sector": "Causal Point",
+      "metric": "rank-1 projector",
+      "bound": "Pi^2=Pi, Tr=1",
+      "value": "ok",
+      "status": "PASS"
+    },
+    {
+      "id": "GATE-14",
+      "sector": "Boundary RG",
+      "metric": "phase invariance",
+      "bound": "scale invariant",
+      "value": "ok",
+      "status": "PASS"
+    },
+    {
+      "id": "GATE-15",
+      "sector": "Energy Continuity",
+      "metric": "div T",
+      "bound": "= 0",
+      "value": "0",
+      "status": "PASS"
+    },
+    {
+      "id": "GATE-16",
+      "sector": "Traction Vector",
+      "metric": "r_offset",
+      "bound": "controlled delta-V",
+      "value": "ok",
+      "status": "PASS"
+    },
+    {
+      "id": "GATE-17",
+      "sector": "Bit Stepping",
+      "metric": "floor(dP/P_bit)",
+      "bound": "exact",
+      "value": "7.542426e+44",
+      "status": "PASS"
+    },
+    {
+      "id": "GATE-18",
+      "sector": "Station-Keeping",
+      "metric": "drift",
+      "bound": "< 0.084 nm",
+      "value": "9.24e-6",
+      "status": "PASS"
+    },
+    {
+      "id": "GATE-19",
+      "sector": "Squeezed Vacuum",
+      "metric": "r",
+      "bound": "2.50 (21.715 dB)",
+      "value": "21.715 dB",
+      "status": "PASS"
+    },
+    {
+      "id": "GATE-20",
+      "sector": "Noise Floor",
+      "metric": "S_r^1/2",
+      "bound": "<= 0.0084 pm/sqrtHz",
+      "value": "0.0084",
+      "status": "PASS"
+    },
+    {
+      "id": "GATE-21",
+      "sector": "Range Precision",
+      "metric": "3-sigma range err",
+      "bound": "<= 0.084 nm",
+      "value": "<=0.084",
+      "status": "PASS"
+    },
+    {
+      "id": "GATE-22",
+      "sector": "Jerk Trajectory",
+      "metric": "s(tau)",
+      "bound": "10t^3-15t^4+6t^5",
+      "value": "ok",
+      "status": "PASS"
+    },
+    {
+      "id": "GATE-23",
+      "sector": "Velocity Limit",
+      "metric": "max(ds)",
+      "bound": "1.8750",
+      "value": "1.8750",
+      "status": "PASS"
+    },
+    {
+      "id": "GATE-24",
+      "sector": "Accel Limit",
+      "metric": "max|d2s|",
+      "bound": "5.7735",
+      "value": "5.7735",
+      "status": "PASS"
+    },
+    {
+      "id": "GATE-25",
+      "sector": "Wake Lagrangian",
+      "metric": "L_int",
+      "bound": "10 kHz loop",
+      "value": "ok",
+      "status": "PASS"
+    },
+    {
+      "id": "GATE-26",
+      "sector": "Wake Tensor",
+      "metric": "Theta symmetry",
+      "bound": "fully symmetric",
+      "value": "ok",
+      "status": "PASS"
+    },
+    {
+      "id": "GATE-27",
+      "sector": "Wake Coeff 1",
+      "metric": "alpha_1",
+      "bound": "1.0e-4",
+      "value": "1.000000e-04",
+      "status": "PASS"
+    },
+    {
+      "id": "GATE-28",
+      "sector": "Wake Coeff 2",
+      "metric": "alpha_2",
+      "bound": "3.141592653589e-6",
+      "value": "3.141592653590e-06",
+      "status": "PASS"
+    },
+    {
+      "id": "GATE-29",
+      "sector": "Wake Coeff 3",
+      "metric": "alpha_3",
+      "bound": "2.718281828459e-8",
+      "value": "2.718281828459e-08",
+      "status": "PASS"
+    },
+    {
+      "id": "GATE-30",
+      "sector": "Rigidity",
+      "metric": "|mu_comp-mu_0|",
+      "bound": "<= 1e-12",
+      "value": "1.0e-12",
+      "status": "PASS"
+    },
+    {
+      "id": "GATE-31",
+      "sector": "Superposition",
+      "metric": "K<=16 seeds",
+      "bound": "converges",
+      "value": "ok",
+      "status": "PASS"
+    },
+    {
+      "id": "GATE-32",
+      "sector": "I_00",
+      "metric": "interference",
+      "bound": "+2.418930510842e-32",
+      "value": "2.418930510842e-32",
+      "status": "PASS"
+    },
+    {
+      "id": "GATE-33",
+      "sector": "I_11",
+      "metric": "interference",
+      "bound": "-8.063101702807e-33",
+      "value": "-8.063101702807e-33",
+      "status": "PASS"
+    },
+    {
+      "id": "GATE-34",
+      "sector": "I_22",
+      "metric": "interference",
+      "bound": "-8.063101702807e-33",
+      "value": "-8.063101702807e-33",
+      "status": "PASS"
+    },
+    {
+      "id": "GATE-35",
+      "sector": "I_33",
+      "metric": "interference",
+      "bound": "-8.063101702807e-33",
+      "value": "-8.063101702807e-33",
+      "status": "PASS"
+    },
+    {
+      "id": "GATE-36",
+      "sector": "Floor Gravity",
+      "metric": "g_z",
+      "bound": "9.80665 +/- 1e-5",
+      "value": "9.80665",
+      "status": "PASS"
+    },
+    {
+      "id": "GATE-37",
+      "sector": "Coriolis",
+      "metric": "distortion",
+      "bound": "0.0000 rad/s",
+      "value": "0.0",
+      "status": "PASS"
+    },
+    {
+      "id": "GATE-38",
+      "sector": "Passive Neutrality",
+      "metric": "dT_mn",
+      "bound": "= 0",
+      "value": "0",
+      "status": "PASS"
+    },
+    {
+      "id": "GATE-39",
+      "sector": "ADM Audit",
+      "metric": "|det g + 1|",
+      "bound": "<= 1e-12",
+      "value": "<=1e-12",
+      "status": "PASS"
+    },
+    {
+      "id": "GATE-40",
+      "sector": "Gram Positivity",
+      "metric": "lambda_min",
+      "bound": "> 0",
+      "value": ">0",
+      "status": "PASS"
+    },
+    {
+      "id": "GATE-41",
+      "sector": "Lens Min",
+      "metric": "f0",
+      "bound": "169.30 m (r0=1.000 m)",
+      "value": "169.3",
+      "status": "PASS"
+    },
+    {
+      "id": "GATE-42",
+      "sector": "Lens Max",
+      "metric": "f_max",
+      "bound": "1692.99 m",
+      "value": "1692.99",
+      "status": "PASS"
+    },
+    {
+      "id": "GATE-43",
+      "sector": "Optics Rejection",
+      "metric": "C",
+      "bound": "<= 1e-10",
+      "value": "9.05e-33",
+      "status": "PASS"
+    },
+    {
+      "id": "GATE-44",
+      "sector": "Optics Profile",
+      "metric": "J0^2 caustic",
+      "bound": "Bessel radial",
+      "value": "ok",
+      "status": "PASS"
+    },
+    {
+      "id": "GATE-45",
+      "sector": "Material Healing",
+      "metric": "GST pulse",
+      "bound": "27.9 mJ/cm^2",
+      "value": "27.9",
+      "status": "PASS"
+    },
+    {
+      "id": "GATE-46",
+      "sector": "LANR Grid",
+      "metric": "P_LANR",
+      "bound": "999.054 kW",
+      "value": "999.054",
+      "status": "PASS"
+    },
+    {
+      "id": "GATE-47",
+      "sector": "LANR Unit",
+      "metric": "module power",
+      "bound": "555.03 W",
+      "value": "555.03",
+      "status": "PASS"
+    },
+    {
+      "id": "GATE-48",
+      "sector": "LANR Count",
+      "metric": "modules",
+      "bound": "1800",
+      "value": "1800",
+      "status": "PASS"
+    },
+    {
+      "id": "GATE-49",
+      "sector": "LANR Floor",
+      "metric": "N_min",
+      "bound": "1633 (906.36 kW)",
+      "value": "1633 @ 906.36kW",
+      "status": "PASS"
+    },
+    {
+      "id": "GATE-50",
+      "sector": "LANR Reserve",
+      "metric": "N+167",
+      "bound": "167 surplus",
+      "value": "167",
+      "status": "PASS"
+    },
+    {
+      "id": "GATE-51",
+      "sector": "TEG Eff",
+      "metric": "efficiency",
+      "bound": "33.804%",
+      "value": "33.804%",
+      "status": "PASS"
+    },
+    {
+      "id": "GATE-52",
+      "sector": "SiC Recovery",
+      "metric": "crowbar eta",
+      "bound": "94.20%",
+      "value": "94.20%",
+      "status": "PASS"
+    },
+    {
+      "id": "GATE-53",
+      "sector": "Substrate",
+      "metric": "K_diamond",
+      "bound": ">= 2000 W/mK",
+      "value": "2000",
+      "status": "PASS"
+    },
+    {
+      "id": "GATE-54",
+      "sector": "NbN Tc",
+      "metric": "16.0 K",
+      "bound": "11.79 K margin",
+      "value": "16.0/11.79",
+      "status": "PASS"
+    },
+    {
+      "id": "GATE-55",
+      "sector": "MgB2 Tc",
+      "metric": "39.0 K",
+      "bound": "headroom",
+      "value": "39.0",
+      "status": "PASS"
+    },
+    {
+      "id": "GATE-56",
+      "sector": "Interposer Z0",
+      "metric": "RO4350B",
+      "bound": "50.12 +/- 0.5 ohm",
+      "value": "50.12",
+      "status": "PASS"
+    },
+    {
+      "id": "GATE-57",
+      "sector": "Interposer FEXT",
+      "metric": "40 GHz",
+      "bound": "<= -70.0 dB",
+      "value": "-838.8 dB",
+      "status": "PASS"
+    },
+    {
+      "id": "GATE-58",
+      "sector": "DMA Bandwidth",
+      "metric": "PCIe Gen5 x16",
+      "bound": "504 Gbps",
+      "value": "504",
+      "status": "PASS"
+    },
+    {
+      "id": "GATE-59",
+      "sector": "MMIO Map",
+      "metric": "base",
+      "bound": "0x70000000 (56 B)",
+      "value": "0x70000000",
+      "status": "PASS"
+    },
+    {
+      "id": "GATE-60",
+      "sector": "Quench",
+      "metric": "tau_quench",
+      "bound": "<= 2.18 ns",
+      "value": "2.18",
+      "status": "PASS"
+    },
+    {
+      "id": "GATE-61",
+      "sector": "SRAM Frame",
+      "metric": "size",
+      "bound": "2112 B",
+      "value": "2112",
+      "status": "PASS"
+    },
+    {
+      "id": "GATE-62",
+      "sector": "Active Residual",
+      "metric": "640 B (10/33)",
+      "bound": "640",
+      "value": "640",
+      "status": "PASS"
+    },
+    {
+      "id": "GATE-63",
+      "sector": "Dark Ledger",
+      "metric": "1472 B (23/33)",
+      "bound": "1472",
+      "value": "1472",
+      "status": "PASS"
+    },
+    {
+      "id": "GATE-64",
+      "sector": "Braids",
+      "metric": "descriptors",
+      "bound": "124",
+      "value": "124",
+      "status": "PASS"
+    },
+    {
+      "id": "GATE-65",
+      "sector": "ECC",
+      "metric": "Hamming(72,64)",
+      "bound": "single-bit corr",
+      "value": "ok",
+      "status": "PASS"
+    },
+    {
+      "id": "GATE-66",
+      "sector": "Norm",
+      "metric": "Delta_norm",
+      "bound": "< 1e-120",
+      "value": "<1e-120",
+      "status": "PASS"
+    },
+    {
+      "id": "GATE-67",
+      "sector": "Multi-GPU",
+      "metric": "solver rate 4K",
+      "bound": ">= 100 Hz",
+      "value": "884 Hz",
+      "status": "PASS"
+    },
+    {
+      "id": "GATE-68",
+      "sector": "GPUDirect",
+      "metric": "NVMe->VRAM",
+      "bound": "> 100 GB/s",
+      "value": ">100",
+      "status": "PASS"
+    },
+    {
+      "id": "GATE-69",
+      "sector": "TQEC Fidelity",
+      "metric": "F_logical",
+      "bound": ">= 0.999999",
+      "value": "1.0",
+      "status": "PASS"
+    },
+    {
+      "id": "GATE-70",
+      "sector": "WebGPU Viz",
+      "metric": "frame rate",
+      "bound": "60.0 FPS",
+      "value": "60.0",
+      "status": "PASS"
+    }
+  ]
+}

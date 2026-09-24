@@ -1,0 +1,10 @@
+[package]
+name = "ghost_lanr_interface"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "ghost_lanr_interface"
+path = "src/lib.rs"
+
+[dependencies]

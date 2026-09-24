@@ -1,0 +1,13 @@
+[package]
+name = "ghost_multiseed_gravity"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "ghost_multiseed_gravity"
+path = "src/lib.rs"
+
+[dependencies]
+rug = { workspace = true }
+glam = { workspace = true }
+ghost_core_engine = { path = "../ghost-core-engine" }
