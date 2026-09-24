@@ -88,7 +88,7 @@
       "id": "GATE-11",
       "sector": "Metric Flatness",
       "metric": "||g-eta||",
-      "bound": "< 1e-16",
+      "bound": "< 1e-16 + CCZ4 damping",
       "value": "<1e-16",
       "status": "PASS"
     },

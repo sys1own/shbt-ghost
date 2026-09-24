@@ -97,6 +97,46 @@ partition of the 906.00 kW debt load. Physical artifacts export via GDSII
   `R_congestion = 2.954e15 m` audit. All modules bind to the 56-byte
   `SHBT-MMIO-1` map at `0x70000000` and the 2112-byte Stinespring frame.
 
+## Advanced physics and engineering upgrades (ghost2.txt)
+
+- **3+1 CCZ4 numerical relativity** (`F512`, `Grid3D`, `Tensor3D512` in
+  ghost-core-engine; `Ccz4Solver`, `nonlinear_cross_coupling`,
+  `wake_tensor_third_order` in ghost-multiseed-gravity): 512-bit
+  fixed-point `f512` (`[u64; 8]`, 492-bit mantissa,
+  `eps_mach ~ 4.08e-149`) on 64-byte-aligned Morton z-ordered grids;
+  hyperbolic RHS for `gamma_tilde_ij, A_tilde_ij, phi, K, Gamma_tilde^i,
+  Z_i, Theta` (`C_CFL = 0.25`, RK4, 4th-order FD); `O(K^2)` cross-couplings
+  for `K <= 128` seeds inside `R_congestion`; Gundlach damping
+  (`kappa_1 > 0`, `kappa_2 > -1`) drives `||H||` to the `1e-122`
+  holographic floor.
+- **Covariant RMHD coronal optics** (`RmhdCoronalSolver`,
+  `C6PhaseMaskController`, ghost-optics-lensing): eikonal + Faraday
+  raytracing through `N_e(r,theta,t) = (A/r^6 + B/r^2)(1 + delta_CME)`
+  (`A = 2.99e8`, `B = 1.55e8 cm^-3`), `r < 10 R_sun`,
+  `lambda in [200 nm, 5 um]`; closed-loop regularized pseudo-inverse
+  `a <- a - g J+ [I_m - I_t] - eta L_C6 a` at `f_actuator >= 4.80 kHz`
+  sustaining `C <= 1e-10`.
+- **Stinespring swarm telemetry & GNC** (`StinespringDilationEngine`,
+  `TelemetryPartition`, `PhaseCorrectionEstimator`,
+  ghost-hil-microkernel; `compute_minimum_jerk_profile`,
+  `PowerAwareBitAllocation`, ghost-propulsion-drive): macro-dilation
+  isometry over `M >= 2` nodes partitioning the 2112-byte frame into
+  640 B active (`eta_A = 10/33`) + 1472 B dark ledger (`eta_D = 23/33`);
+  `Sp(2g, Z)` boundary relabeling with Kojima `Ent = 0` (`Delta S_A = 0`);
+  min-jerk `s(tau)` + `delta r_phase = (lambda/2pi) arg(Tr[sigma_z x
+  sigma_z E(rho)])` tracking `<= 0.084 nm`; power-aware bit-stepping
+  `Delta N_i(k) = floor(DeltaP_net / 1.482)` throttling near the
+  `+93.054 kW` LANR surplus floor.
+- **Photonic PDK & mechanical CAD exporters** (`klayout_drc_deck`,
+  `lvs_subcircuit`, `ro4350b_s2p`, `belleville_load_n`,
+  ghost-eda-exporters): InP/InGaAs 8x8 PDK DRC/LVS decks (50 um pitch,
+  1.5x5.0 um airbridges, 300 nm Nb traces `T_c = 9.20 K`); RO4350B
+  Touchstone S2P to 40 GHz (`Z_0 = 50.12 +/- 0.80 Ohm`, loss
+  `0.415 dB/cm < 0.42`); CF35/CF40 GD&T plus Inconel X-750 Almen-Laszlo
+  Belleville stacks (`K_stack = 5e6 N/m`) absorbing 28.4 um thermal
+  expansion (~142 N) under `142.08 MW` transients. `export-eda` now also
+  emits `eda/ghost_pdk_drc.rul` and `eda/ghost_lvs.cir`.
+
 ## Workspace architecture
 
 Eleven specialized crates under `crates/` (Cargo `resolver = "2"`):
