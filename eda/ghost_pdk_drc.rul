@@ -1,0 +1,12 @@
+# SHBT-GHOST InP/InGaAs Photonic PDK DRC/LVS deck
+# Layer/DATATYPE  MinWidth(um)  MinSpacing(um)
+INP_SUBSTRATE   1/0   500.00  --
+INGAAS_CAVITY   10/0  2.50    2.50
+AU_AIRBRIDGE    25/0  1.50    3.00
+AIRBRIDGE_POST  25/1  2.00    4.00
+NB_TRACES       30/0  0.30    0.30
+VIA_CRYOMET     35/0  0.50    0.50
+# DRC_RULE_01 cavity pitch = 50.00um +/- 0.005um
+# DRC_RULE_02 airbridge width in [1.45,1.55]um, span <= 5.00um
+# DRC_RULE_03 Nb thickness = 300.0nm +/- 5.0nm
+# DRC_RULE_04 T_c >= 9.20K => rho(T<9.20K) = 0

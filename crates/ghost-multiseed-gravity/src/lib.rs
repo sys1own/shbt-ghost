@@ -182,6 +182,126 @@ impl Default for HeegaardFloerTracker {
     }
 }
 
+/// Holographic constraint-violation noise floor.
+pub const HOLOGRAPHIC_FLOOR: f64 = 1.0e-122;
+
+/// CCZ4 field state at a grid point (ghost2.txt Target A): conformal factor
+/// `phi`, conformal metric `gamma_tilde`, trace-free `A_tilde`, trace `K`,
+/// conformal connection `Gamma_tilde^i`, Z4 vector `Z_i`, Z4 scalar `Theta`.
+#[derive(Debug, Clone, Default)]
+pub struct Ccz4State {
+    pub phi: f64,
+    pub gamma_tilde: [[f64; 3]; 3],
+    pub a_tilde: [[f64; 3]; 3],
+    pub k: f64,
+    pub gamma_tilde_up: [f64; 3],
+    pub z: [f64; 3],
+    pub theta: f64,
+}
+
+/// CCZ4 right-hand-side derivatives evaluated pointwise for a lapse `alpha`
+/// with shift `beta` (ghost2.txt Target A equations; curvature/matter terms
+/// supplied externally so the engine stays grid-agnostic).
+#[derive(Debug, Clone)]
+pub struct Ccz4Rhs {
+    pub d_phi: f64,
+    pub d_gamma_tilde: [[f64; 3]; 3],
+    pub d_k: f64,
+    pub d_theta: f64,
+    pub d_z: [f64; 3],
+}
+
+pub struct Ccz4Solver {
+    /// Gundlach constraint damping `kappa_1 > 0`.
+    pub kappa1: f64,
+    /// `kappa_2 > -1`.
+    pub kappa2: f64,
+}
+
+impl Ccz4Solver {
+    pub fn new(kappa1: f64, kappa2: f64) -> Self {
+        assert!(kappa1 > 0.0 && kappa2 > -1.0);
+        Self { kappa1, kappa2 }
+    }
+
+    /// Algebraic (principal + damping) RHS at a point with lapse `alpha`,
+    /// scalar curvature `r3`, matter terms `rho_adm`, `s_i`, and derivative
+    /// contractions already reduced to scalars.
+    pub fn rhs(
+        &self,
+        st: &Ccz4State,
+        alpha: f64,
+        r3: f64,
+        rho_adm: f64,
+        s_i: [f64; 3],
+        a2: f64,
+    ) -> Ccz4Rhs {
+        let g = 6.67430e-11_f64;
+        let d_phi = -alpha * (st.k - st.theta) / 6.0;
+        let d_k = alpha
+            * (r3 + st.k * st.k - 2.0 * st.theta * st.k
+                + 4.0 * std::f64::consts::PI * g * (0.0 - 3.0 * rho_adm))
+            - 3.0 * alpha * self.kappa1 * (1.0 + self.kappa2) * st.theta;
+        let d_theta = 0.5
+            * alpha
+            * (r3 - a2 + 2.0 / 3.0 * st.k * st.k
+                - 2.0 * st.theta * st.k
+                - 16.0 * std::f64::consts::PI * g * rho_adm)
+            - alpha * self.kappa1 * (2.0 + self.kappa2) * st.theta;
+        let mut d_z = [0.0; 3];
+        for (i, dz) in d_z.iter_mut().enumerate() {
+            *dz = alpha * (-8.0 * std::f64::consts::PI * g * s_i[i])
+                - alpha * self.kappa1 * st.z[i];
+        }
+        let mut d_gamma_tilde = [[0.0; 3]; 3];
+        for (row_d, row_a) in d_gamma_tilde.iter_mut().zip(st.a_tilde.iter()) {
+            for (d, a) in row_d.iter_mut().zip(row_a.iter()) {
+                *d = -2.0 * alpha * a;
+            }
+        }
+        Ccz4Rhs {
+            d_phi,
+            d_gamma_tilde,
+            d_k,
+            d_theta,
+            d_z,
+        }
+    }
+
+    /// Gundlach damping: `||H(t)||_2 <= ||H(0)||_2 exp(-kappa_1 * alpha * t)`,
+    /// saturated at the `1e-122` holographic noise floor.
+    pub fn damped_constraint(&self, h0: f64, alpha: f64, t: f64) -> f64 {
+        (h0.abs() * (-self.kappa1 * alpha * t).exp()).max(HOLOGRAPHIC_FLOOR)
+    }
+}
+
+/// 2nd-order cross-coupling `I_mn` for K seeds within `R_congestion`
+/// (ghost2.txt Target A, eq. for I_mn with `u = (1,0,0,0)` rest frames).
+pub fn nonlinear_cross_coupling(masses_msun: &[(f64, f64)]) -> f64 {
+    let g = 6.67430e-11_f64;
+    let c2 = C_LIGHT * C_LIGHT;
+    let mut i00 = 0.0;
+    for (idx, &(m_i, r_i)) in masses_msun.iter().enumerate() {
+        for &(m_j, r_j) in masses_msun.iter().skip(idx + 1) {
+            let mi = m_i * core::SOLAR_MASS_KG;
+            let mj = m_j * core::SOLAR_MASS_KG;
+            i00 += g * g * mi * mj / (c2 * c2 * r_i * r_j);
+        }
+    }
+    i00
+}
+
+/// Wake-tensor coupling magnitude `Theta_mrs` (leading gravitomagnetic term).
+pub fn wake_tensor_third_order(masses_msun: &[(f64, f64)]) -> f64 {
+    let g = 6.67430e-11_f64;
+    let mut t = 0.0;
+    for &(m_i, r_i) in masses_msun {
+        t += 8.0 * std::f64::consts::PI * g * m_i * core::SOLAR_MASS_KG
+            / (C_LIGHT.powi(4) * r_i);
+    }
+    t
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -221,5 +341,24 @@ mod tests {
         assert!(tr.verify_address_shift(1.0 + 5e-13, 1.0));
         assert!(!tr.verify_address_shift(1.0 + 2e-12, 1.0));
         let _ = bad;
+    }
+
+    #[test]
+    fn ccz4_rhs_and_damping() {
+        let solver = Ccz4Solver::new(0.5, 0.0);
+        let st = Ccz4State {
+            theta: 1e-6,
+            ..Default::default()
+        };
+        let rhs = solver.rhs(&st, 1.0, 0.0, 0.0, [0.0; 3], 0.0);
+        assert!((rhs.d_phi - 1e-6 / 6.0).abs() < 1e-12);
+        assert!(rhs.d_theta < 0.0); // kappa1 damping drives Theta -> 0
+        // Constraint decays to the 1e-122 holographic floor.
+        assert_eq!(solver.damped_constraint(1e-20, 1.0, 600.0), 1e-122);
+        assert!(solver.damped_constraint(1e-20, 1.0, 10.0) < 1e-20);
+        // Cross-coupling + wake tensors finite inside congestion radius.
+        let seeds = [(1e-6, 1e15), (1e-6, 1.1e15)];
+        assert!(nonlinear_cross_coupling(&seeds) > 0.0);
+        assert!(wake_tensor_third_order(&seeds) > 0.0);
     }
 }

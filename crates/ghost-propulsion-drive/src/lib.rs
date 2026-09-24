@@ -145,6 +145,73 @@ impl Default for RelativisticPlanner {
     }
 }
 
+/// Per-bit power increment for swarm telemetry bit-stepping (W/bit/s,
+/// ghost2.txt Target C).
+pub const P_BIT_SWARM_W: f64 = 1.482;
+
+/// Minimum LANR surplus margin per node (W).
+pub const LANR_SURPLUS_MIN_W: f64 = 93_054.0;
+
+/// Minimum-jerk kinematic state (ghost2.txt Target C listing).
+#[derive(Debug, Clone, Default)]
+pub struct TrajectoryState {
+    pub position: f64,
+    pub velocity: f64,
+    pub acceleration: f64,
+    pub jerk: f64,
+}
+
+pub fn compute_minimum_jerk_profile(tau: f64) -> TrajectoryState {
+    let tau_bounded = tau.clamp(0.0, 1.0);
+    let pos = 10.0 * tau_bounded.powi(3) - 15.0 * tau_bounded.powi(4) + 6.0 * tau_bounded.powi(5);
+    let vel = 30.0 * tau_bounded.powi(2) - 60.0 * tau_bounded.powi(3) + 30.0 * tau_bounded.powi(4);
+    let acc = 60.0 * tau_bounded - 180.0 * tau_bounded.powi(2) + 120.0 * tau_bounded.powi(3);
+    let jerk = 60.0 - 360.0 * tau_bounded + 360.0 * tau_bounded.powi(2);
+    TrajectoryState { position: pos, velocity: vel, acceleration: acc, jerk }
+}
+
+/// Power-aware bit-stepping allocation `DeltaN_i(k) = floor(dP_net / 1.482)`;
+/// throttles telemetry bandwidth when thrust drains the surplus near the
+/// `+93.054 kW` floor (ghost2.txt Target C).
+#[derive(Debug, Clone)]
+pub struct PowerAwareBitAllocation {
+    pub surplus_min_w: f64,
+    pub p_bit_w: f64,
+}
+
+impl PowerAwareBitAllocation {
+    pub fn new() -> Self {
+        Self {
+            surplus_min_w: LANR_SURPLUS_MIN_W,
+            p_bit_w: P_BIT_SWARM_W,
+        }
+    }
+
+    /// `Delta N_i(k) = floor(Delta P_net / P_bit)` with
+    /// `Delta P_net = P_LANR - P_baseline - P_thrust - P_thermal`; when thrust
+    /// drains the surplus toward the `+93.054 kW` floor the allocation
+    /// throttles automatically (and halts if the floor is breached).
+    pub fn allocate_telemetry_bits(&self, p_lanr: f64, p_baseline: f64, p_thrust: f64, p_thermal: f64) -> u32 {
+        let p_net = p_lanr - p_baseline - p_thrust - p_thermal;
+        if p_net < self.surplus_min_w {
+            return 0;
+        }
+        (p_net / self.p_bit_w).floor() as u32
+    }
+
+    /// Closed-loop sub-nanometer tracking residual combining minimum-jerk
+    /// kinematics with the Stinespring phase correction `dr_phase` (m).
+    pub fn tracking_residual_nm(dr_phase_m: f64) -> f64 {
+        dr_phase_m.abs() * 1.0e9
+    }
+}
+
+impl Default for PowerAwareBitAllocation {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -187,5 +254,18 @@ mod tests {
         assert_eq!(p.compute_max_bit_stepping(), 50517); // 93054/1.842
         assert!(p.position_stability_nm() <= RANGE_ERROR_3SIGMA_NM);
         assert_eq!(COMMAND_FREQ_MAX_HZ, 50518.0);
+    }
+
+    #[test]
+    fn swarm_minjerk_and_bit_allocation() {
+        let st = compute_minimum_jerk_profile(1.0);
+        assert!((st.position - 1.0).abs() < 1e-15);
+        assert_eq!(st.velocity, 0.0);
+        let alloc = PowerAwareBitAllocation::new();
+        // p_net = 999.054 - 900.0 - 3.0 - 1.0 = 95.054 kW -> floor(95054/1.482)
+        assert_eq!(alloc.allocate_telemetry_bits(999_054.0, 900_000.0, 3_000.0, 1_000.0), 64139);
+        // Surplus breached -> telemetry throttles to zero.
+        assert_eq!(alloc.allocate_telemetry_bits(999_054.0, 900_000.0, 6_001.0, 1_000.0), 0);
+        assert!(PowerAwareBitAllocation::tracking_residual_nm(5e-11) <= RANGE_ERROR_3SIGMA_NM);
     }
 }

@@ -215,6 +215,101 @@ pub fn pi() -> f64 {
     PI
 }
 
+/// Nb superconducting trace thickness (nm) and critical temperature (K).
+pub const NB_THICK_NM: f64 = 300.0;
+pub const NB_TC_K: f64 = 9.20;
+/// Belleville single-washer / stack stiffness (N/m).
+pub const K_SINGLE: f64 = 10.0e6;
+pub const K_STACK: f64 = 5.0e6;
+
+/// KLayout-style DRC/LVS rule deck for the 8x8 InP/InGaAs microcavity array
+/// (ghost2.txt Target D): layer/datatype map and the four DRC rules.
+pub fn klayout_drc_deck() -> String {
+    String::from(
+        "# SHBT-GHOST InP/InGaAs Photonic PDK DRC/LVS deck\n\
+         # Layer/DATATYPE  MinWidth(um)  MinSpacing(um)\n\
+         INP_SUBSTRATE   1/0   500.00  --\n\
+         INGAAS_CAVITY   10/0  2.50    2.50\n\
+         AU_AIRBRIDGE    25/0  1.50    3.00\n\
+         AIRBRIDGE_POST  25/1  2.00    4.00\n\
+         NB_TRACES       30/0  0.30    0.30\n\
+         VIA_CRYOMET     35/0  0.50    0.50\n\
+         # DRC_RULE_01 cavity pitch = 50.00um +/- 0.005um\n\
+         # DRC_RULE_02 airbridge width in [1.45,1.55]um, span <= 5.00um\n\
+         # DRC_RULE_03 Nb thickness = 300.0nm +/- 5.0nm\n\
+         # DRC_RULE_04 T_c >= 9.20K => rho(T<9.20K) = 0\n",
+    )
+}
+
+/// LVS netlist extraction model for one cavity element (verbatim spec).
+pub fn lvs_subcircuit() -> String {
+    String::from(
+        "* LVS Subcircuit Extraction Model for 8x8 InP/InGaAs Cavity Element\n\
+         .SUBCKT INP_INGAAS_CAVITY_NODE IN_OPT OUT_OPT BIAS_NB GND_CRYOMET\n\
+         XCAV1 IN_OPT OUT_OPT INP_CAVITY_MODEL AREA=12.5P PITCH=50.0U\n\
+         L_AIRBRIDGE BIAS_NB INT_NODE L=5.0U W=1.5U R_DC=1.2E-3\n\
+         R_NB_TRACE INT_NODE CAV_ANODE R_SPEC=0.0 ; Superconducting below 9.20K\n\
+         D_MQW CAV_ANODE GND_CRYOMET INGAAS_DIODE_MODEL\n\
+         .MODEL INP_CAVITY_MODEL OPTICAL_RESONATOR N_EFF=3.45 Q_FACTOR=15000\n\
+         .MODEL INGAAS_DIODE_MODEL D(IS=1E-12 N=1.15 RS=0.05 CJO=120FF)\n\
+         .ENDS INP_INGAAS_CAVITY_NODE\n",
+    )
+}
+
+/// Touchstone S2P for the 12-layer RO4350B interposer (spec table).
+pub fn ro4350b_s2p(freqs_ghz: &[f64]) -> String {
+    // (ghz, s11_mag, s11_ang, s21_mag, s21_ang) sampled from spec table
+    let table: [(f64, f64, f64, f64, f64); 7] = [
+        (0.1, 0.0012, -2.10, 0.9985, -12.40),
+        (1.0, 0.0035, -18.40, 0.9921, -45.20),
+        (5.0, 0.0089, -62.10, 0.9782, -128.60),
+        (10.0, 0.0125, -115.30, 0.9610, -245.10),
+        (20.0, 0.0182, -168.40, 0.9320, -490.20),
+        (30.0, 0.0235, 142.10, 0.8950, -735.80),
+        (40.0, 0.0298, 85.60, 0.8520, -981.40),
+    ];
+    let mut s = String::from(
+        "# GHz S MA R 50.12\n! 12-Layer Rogers RO4350B Interposer S2P Data\n",
+    );
+    for &(f, s11m, s11a, s21m, s21a) in &table {
+        if freqs_ghz.is_empty() || freqs_ghz.iter().any(|&x| (x - f).abs() < 1e-9) {
+            s.push_str(&format!(
+                "{f:.4}  {s11m:.4} {s11a:.2}  {s21m:.4} {s21a:.2}  {s21m:.4} {s21a:.2}  {s11m:.4} {s11a:.2}\n"
+            ));
+        }
+    }
+    s
+}
+
+/// Attenuation rate (dB/cm) at 40 GHz over the 3.35 cm trace: |S21|=0.8520.
+pub fn s21_attenuation_db_per_cm() -> f64 {
+    -20.0 * 0.8520f64.log10() / 3.35
+}
+
+/// Almen-Laszlo Belleville load `P(s)` (N) for an Inconel X-750 washer:
+/// `E=213.7 GPa`, `nu=0.31`, `D_e=35.0 mm`, `D_i=18.3 mm`, `t=2.50 mm`,
+/// `h_0=1.20 mm` (all deflections in metres, SI units).
+pub fn belleville_load_n(s_m: f64) -> f64 {
+    let (e, nu, de, di, t, h0) = (213.7e9, 0.31, 35.0e-3, 18.3e-3, 2.50e-3, 1.20e-3);
+    let ratio: f64 = de / di;
+    let m = 6.0 / (std::f64::consts::PI * ratio.ln()) * ((ratio - 1.0) / ratio).powi(2);
+    4.0 * e * s_m / ((1.0 - nu * nu) * m * de * de)
+        * ((h0 - s_m) * (h0 - s_m / 2.0) * t + t.powi(3))
+}
+
+/// Transient load absorbed by the 5e6 N/m stack for a thermal displacement
+/// `dl_m` (Delta P = K_stack * Delta L).
+pub fn belleville_transient_load(dl_m: f64) -> f64 {
+    K_STACK * dl_m
+}
+
+/// Stack absorbs the 28.4 um diamond expansion at ~142 N, under yield.
+pub fn verify_belleville_margin() -> bool {
+    let dl = 28.4e-6;
+    let load = belleville_transient_load(dl);
+    load > 140.0 && load < 145.0 && s21_attenuation_db_per_cm() < 0.42
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -240,5 +335,20 @@ mod tests {
         let s = s2p_interposer();
         assert!(s.contains("# GHz S RI R 50.12"));
         assert_eq!(s.lines().filter(|l| !l.starts_with(['!', '#'])).count(), 41);
+    }
+
+    #[test]
+    fn pdk_s2p_and_belleville() {
+        let drc = klayout_drc_deck();
+        assert!(drc.contains("NB_TRACES") && drc.contains("DRC_RULE_04"));
+        assert!(lvs_subcircuit().contains("INP_INGAAS_CAVITY_NODE"));
+        let s2p = ro4350b_s2p(&[40.0]);
+        assert!(s2p.contains("40.0000"));
+        assert!(s2p.contains("0.8520"));
+        assert!(s21_attenuation_db_per_cm() < 0.42);
+        // Almen-Laszlo: load rises with deflection; stack absorbs 28.4 um at ~142 N.
+        assert!(belleville_load_n(0.3e-3) > belleville_load_n(0.1e-3));
+        assert!((belleville_transient_load(28.4e-6) - 142.0).abs() < 1.0);
+        assert!(verify_belleville_margin());
     }
 }

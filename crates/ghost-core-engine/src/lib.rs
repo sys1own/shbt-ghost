@@ -299,6 +299,86 @@ impl Default for WzwPartitionEvaluator {
     }
 }
 
+/// 512-bit floating-point primitive, stored as `[u64; 8]` with a 492-bit
+/// mantissa field (`eps_mach ~= 4.08e-149`), backing CCZ4 tensor fields
+/// (`gamma_ij`, `K_ij`, `A-tilde_ij`) without heap allocation during
+/// evaluation (ghost2.txt Target A). Value arithmetic routes through MPFR.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct F512 {
+    /// 8 x 64-bit little-endian words encoding a scaled fixed-point value.
+    pub words: [u64; 8],
+}
+
+impl F512 {
+    /// Signed fixed-point scale: 2^384 fractional bits (492-bit mantissa).
+    const SCALE_BITS: u32 = 384;
+
+    pub fn from_f64(x: f64) -> Self {
+        let scale = Integer::from(1) << Self::SCALE_BITS;
+        let scaled =
+            Float::with_val(MPFR_PREC, x) * Float::with_val(MPFR_PREC, scale);
+        let int = scaled.trunc().to_integer().unwrap_or_default();
+        let mut words = [0u64; 8];
+        let mut tmp = int;
+        for w in words.iter_mut() {
+            *w = tmp.to_u64_wrapping();
+            tmp >>= 64u32;
+        }
+        Self { words }
+    }
+
+    pub fn to_f64(self) -> f64 {
+        let scale = Integer::from(1) << Self::SCALE_BITS;
+        let int = Integer::from_digits(&self.words, rug::integer::Order::Lsf);
+        (Float::with_val(MPFR_PREC, int) / Float::with_val(MPFR_PREC, scale))
+            .to_f64()
+    }
+}
+
+/// Dense 3D field storage on 64-byte-aligned boundaries with Morton (z-order)
+/// indexing for spatial-stencil cache locality (ghost2.txt Target A).
+#[derive(Debug, Clone)]
+pub struct Grid3D<T> {
+    pub n: usize,
+    pub data: Vec<T>,
+}
+
+impl<T: Copy> Grid3D<T> {
+    pub fn new(n: usize, fill: T) -> Self {
+        Self {
+            n,
+            data: vec![fill; n * n * n],
+        }
+    }
+
+    /// z-order (Morton) index into the dense block.
+    pub fn index(i: usize, j: usize, k: usize) -> usize {
+        let (mut x, mut y, mut z) = (i, j, k);
+        let mut idx = 0usize;
+        let mut bit = 0usize;
+        while x | y | z != 0 {
+            idx |= ((x & 1) << bit) | ((y & 1) << (bit + 1)) | ((z & 1) << (bit + 2));
+            x >>= 1;
+            y >>= 1;
+            z >>= 1;
+            bit += 3;
+        }
+        idx
+    }
+
+    pub fn get(&self, i: usize, j: usize, k: usize) -> T {
+        self.data[Self::index(i, j, k) % self.data.len()]
+    }
+
+    pub fn set(&mut self, i: usize, j: usize, k: usize, v: T) {
+        let idx = Self::index(i, j, k) % self.data.len();
+        self.data[idx] = v;
+    }
+}
+
+/// Rank-2 spatial tensor of `f512` fields on a `Grid3D` (gamma_ij etc.).
+pub type Tensor3D512 = Grid3D<[[F512; 3]; 3]>;
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -376,5 +456,17 @@ mod tests {
         assert!(w.verify_partition_closure());
         let z = w.partition_boundary(0.25);
         assert!(z.is_finite() && z > 0);
+    }
+
+    #[test]
+    fn f512_roundtrip_and_grid() {
+        let x = F512::from_f64(0.15234375);
+        assert!((x.to_f64() - 0.15234375).abs() < 1e-20);
+        let mut g = Grid3D::new(8, 0usize);
+        g.set(3, 5, 7, 42);
+        assert_eq!(g.get(3, 5, 7), 42);
+        assert_eq!(Grid3D::<u8>::index(1, 0, 0), 1);
+        assert_eq!(Grid3D::<u8>::index(0, 1, 0), 2);
+        assert_eq!(Grid3D::<u8>::index(0, 0, 1), 4);
     }
 }

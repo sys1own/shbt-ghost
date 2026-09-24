@@ -227,6 +227,129 @@ impl Default for PinnDeconvolutionEngine {
     }
 }
 
+/// Minimum C6 phase-mask actuator loop rate (Hz).
+pub const C6_LOOP_MIN_HZ: f64 = 4.80e3;
+/// Baumbach-Allen A coefficient (cm^-3 -> m^-3).
+pub const BA_A: f64 = 2.99e14;
+/// Baumbach-Allen B coefficient (cm^-3 -> m^-3).
+pub const BA_B: f64 = 1.55e14;
+/// Solar radius (m).
+pub const R_SUN: f64 = 6.957e8;
+
+/// Covariant 3D RMHD coronal raytracer (ghost2.txt Target B): 2PN geodesic
+/// light paths through magnetized plasma `r < 10 R_sun` with Baumbach-Allen
+/// density `N_e(r,theta,t) = (A/r^6 + B/r^2)[1 + delta_CME(theta,t)]`,
+/// eikonal phase `Phi_total(b,omega)` and Faraday rotation `Delta_Psi`.
+#[derive(Debug, Clone)]
+pub struct RmhdCoronalSolver {
+    pub wavelength: f64,
+}
+
+impl RmhdCoronalSolver {
+    pub fn new(wavelength: f64) -> Self {
+        Self { wavelength }
+    }
+
+    /// Modified Baumbach-Allen density with CME modulation (m^-3).
+    pub fn electron_density(&self, r_over_rsun: f64, delta_cme: f64) -> f64 {
+        (BA_A / r_over_rsun.powi(6) + BA_B / r_over_rsun.powi(2)) * (1.0 + delta_cme)
+    }
+
+    /// CME spatio-temporal modulation `delta_CME(theta,t)` (spec form).
+    pub fn cme_modulation(&self, a_cme: f64, theta: f64, theta0: f64, sigma: f64, t: f64, tau_rise: f64) -> f64 {
+        a_cme * (-(theta - theta0).powi(2) / (2.0 * sigma * sigma)).exp()
+            * (t / tau_rise) * (1.0 - t / tau_rise).exp()
+    }
+
+    /// Local plasma frequency `omega_p = sqrt(4 pi N_e e^2 / m_e)` (rad/s).
+    pub fn plasma_frequency(&self, n_e: f64) -> f64 {
+        let e = 1.602176634e-19;
+        let m_e = 9.1093837015e-31;
+        (4.0 * std::f64::consts::PI * n_e * e * e / m_e).sqrt()
+    }
+
+    /// Total eikonal phase `Phi_total(b,omega)` — grav + 2PN + plasma terms.
+    pub fn eikonal_phase(&self, b: f64, r_g: f64, n_e_integral: f64) -> f64 {
+        let c = 2.99792458e8;
+        let k = 2.0 * std::f64::consts::PI / self.wavelength;
+        let omega = c * k;
+        let grav = (4.0 * k * r_g / c) * (2.0e11 / b).ln();
+        let pn = 7.0 * std::f64::consts::PI * k * r_g * r_g / (4.0 * b);
+        let e = 1.602176634e-19;
+        let m_e = 9.1093837015e-31;
+        let eps0 = 8.8541878128e-12;
+        let plasma = (k * e * e / (eps0 * m_e * omega * omega)) * n_e_integral;
+        grav + pn - plasma
+    }
+
+    /// Faraday rotation `Delta Psi = (e^3 lambda^2 / 8 pi^3 eps0 m_e^2 c^3)
+    /// * int N_e B_parallel ds` (radians).
+    pub fn faraday_rotation(&self, b_parallel: f64, n_e_path: f64) -> f64 {
+        let e: f64 = 1.602176634e-19;
+        let m_e: f64 = 9.1093837015e-31;
+        let c: f64 = 2.99792458e8;
+        let eps0 = 8.8541878128e-12;
+        let lam2 = self.wavelength * self.wavelength;
+        e.powi(3) * lam2 / (8.0 * std::f64::consts::PI.powi(3) * eps0 * m_e * m_e * c * c * c)
+            * n_e_path * b_parallel
+    }
+}
+
+/// Closed-loop C6 phase-mask controller (ghost2.txt Target B): regularized
+/// pseudo-inverse Jacobian feedback `a <- a - g J+ [I_meas - I_target]
+/// - eta L_C6 a` at `f_actuator >= 4.80 kHz`.
+#[derive(Debug, Clone)]
+pub struct C6PhaseMaskController {
+    pub gamma: f64,
+    pub eta: f64,
+    pub loop_hz: f64,
+    /// 6-element actuator commands.
+    pub actuators: [f64; 6],
+}
+
+impl C6PhaseMaskController {
+    pub fn new(loop_hz: f64) -> Self {
+        Self {
+            gamma: 0.35,
+            eta: 0.01,
+            loop_hz,
+            actuators: [0.0; 6],
+        }
+    }
+
+    /// C6-symmetry-enforcing cyclic Laplacian `L a` (lattice Laplacian on the
+    /// 6-ring: `2a_i - a_{i-1} - a_{i+1}`).
+    pub fn c6_laplacian(a: &[f64; 6]) -> [f64; 6] {
+        let mut out = [0.0; 6];
+        for (i, o) in out.iter_mut().enumerate() {
+            *o = 2.0 * a[i] - a[(i + 5) % 6] - a[(i + 1) % 6];
+        }
+        out
+    }
+
+    /// One feedback update with scalar Jacobian `j` (uniform mode).
+    pub fn update(&mut self, j: f64, i_measured: f64, i_target: f64, reg: f64) {
+        let j_pinv = j / (j * j + reg); // regularized pseudo-inverse
+        let l_a = Self::c6_laplacian(&self.actuators);
+        let err = i_measured - i_target;
+        for (i, a) in self.actuators.iter_mut().enumerate() {
+            *a -= self.gamma * j_pinv * err + self.eta * l_a[i];
+        }
+    }
+
+    /// Loop sustains the null iff rate >= 4.80 kHz and residual intensity
+    /// ratio stays under `C <= 1e-10`.
+    pub fn verify_nulling(&self, contrast: f64) -> bool {
+        self.loop_hz >= C6_LOOP_MIN_HZ && contrast <= CONTRAST_BOUND
+    }
+}
+
+impl Default for C6PhaseMaskController {
+    fn default() -> Self {
+        Self::new(C6_LOOP_MIN_HZ)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -300,5 +423,29 @@ mod tests {
         assert!(g > 0.999);
         assert!(p.verify_deconvolved_contrast(1.0, PLASMA_PHASE_VAR));
         assert!(!p.verify_deconvolved_contrast(1e-8, 1e-6));
+    }
+
+    #[test]
+    fn rmhd_and_c6_loop() {
+        let r = RmhdCoronalSolver::new(800e-9);
+        let ne = r.electron_density(2.0, 0.05);
+        assert!((ne - (BA_A / 64.0 + BA_B / 4.0) * 1.05).abs() < 1e10);
+        assert!(r.cme_modulation(0.2, 0.0, 0.0, 0.3, 60.0, 60.0) > 0.0);
+        assert!(r.plasma_frequency(ne) > 0.0);
+        assert!(r.eikonal_phase(1.0e11, 1.48e3, 1e22).is_finite());
+        let fr = r.faraday_rotation(1e-4, 1e20);
+        assert!(fr.is_finite() && fr.abs() > 0.0);
+        // Faraday rotation scales as lambda^2.
+        let r2 = RmhdCoronalSolver::new(1600e-9);
+        assert!((r2.faraday_rotation(1e-4, 1e20) / fr - 4.0).abs() < 1e-9);
+
+        let mut c = C6PhaseMaskController::new(5.0e3);
+        for _ in 0..50 {
+            c.update(0.8, 1e-9, 0.0, 1e-6);
+        }
+        assert!(c.actuators.iter().all(|a| a.is_finite()));
+        assert!(c.verify_nulling(1e-12));
+        assert!(!C6PhaseMaskController::new(4.0e3).verify_nulling(1e-12));
+        assert_eq!(C6PhaseMaskController::c6_laplacian(&[1.0; 6]), [0.0; 6]);
     }
 }
