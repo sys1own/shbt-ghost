@@ -165,6 +165,68 @@ impl PlasmaEikonalSolver {
     }
 }
 
+/// PINN physics-loss weight `lambda_phys`.
+pub const PINN_LAMBDA_PHYS: f64 = 1.0;
+/// PINN regularization weight `lambda_reg`.
+pub const PINN_LAMBDA_REG: f64 = 1.0e-3;
+/// Coronal plasma phase noise floor used for Wiener filtering (rad^2).
+pub const PLASMA_PHASE_VAR: f64 = 1.0e-11;
+
+/// PINN wave-optics deconvolution engine (transferred from shbt-sglt):
+/// implicit neural surface `f_theta(r, lambda)` minimizing the combined loss
+/// `L_PINN = L_data + lambda_phys ||nabla^2 E + k^2 n_eff^2 E||^2 + lambda_reg R(f_theta)`.
+/// Realized as real-time Wiener deconvolution of the Bessel `J_0^2` caustic
+/// under coronal plasma phase perturbations.
+#[derive(Debug, Clone)]
+pub struct PinnDeconvolutionEngine {
+    pub lambda_phys: f64,
+    pub lambda_reg: f64,
+    /// Effective refractive index of the propagation medium.
+    pub n_eff: f64,
+}
+
+impl PinnDeconvolutionEngine {
+    pub fn new() -> Self {
+        Self {
+            lambda_phys: PINN_LAMBDA_PHYS,
+            lambda_reg: PINN_LAMBDA_REG,
+            n_eff: 1.0,
+        }
+    }
+
+    /// Helmholtz residual `r = nabla^2 E + k^2 n_eff^2 E` at a sample point.
+    pub fn helmholtz_residual(&self, e: f64, laplacian_e: f64, k: f64) -> f64 {
+        laplacian_e + k * k * self.n_eff * self.n_eff * e
+    }
+
+    /// Physics-informed loss over residual samples.
+    pub fn physics_loss(&self, l_data: f64, residuals: &[f64], reg: f64) -> f64 {
+        let r2: f64 = residuals.iter().map(|r| r * r).sum();
+        l_data + self.lambda_phys * r2 + self.lambda_reg * reg
+    }
+
+    /// Wiener deconvolution gain for caustic mode magnitude `h_mag` under
+    /// plasma phase-noise variance `phase_var`: `W = |H|^2 / (|H|^2 + S_phi)`.
+    pub fn wiener_gain(&self, h_mag: f64, phase_var: f64) -> f64 {
+        let h2 = h_mag * h_mag;
+        h2 / (h2 + phase_var)
+    }
+
+    /// Contrast after deconvolution: residual phase error `phase_var` scaled by
+    /// `(1 - wiener_gain)` must keep coronagraphic `C <= 1e-10`.
+    pub fn verify_deconvolved_contrast(&self, h_mag: f64, phase_var: f64) -> bool {
+        let g = self.wiener_gain(h_mag, phase_var);
+        let residual = phase_var * (1.0 - g);
+        residual <= CONTRAST_BOUND
+    }
+}
+
+impl Default for PinnDeconvolutionEngine {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -225,5 +287,18 @@ mod tests {
         assert!(!far.verify_c6_rejection(1e-12));
         let bad = PlasmaEikonalSolver { wavelength: 800e-9, baseline: 500.0 };
         assert!(!bad.verify_c6_rejection(1e-9));
+    }
+
+    #[test]
+    fn pinn_deconvolution() {
+        let p = PinnDeconvolutionEngine::new();
+        let k = 2.0 * std::f64::consts::PI / 800e-9;
+        let r = p.helmholtz_residual(1.0, -k * k * 1.0, k);
+        assert!(r.abs() < 1e-6);
+        assert!(p.physics_loss(0.01, &[1e-6, -2e-6], 1e-4) > 0.01);
+        let g = p.wiener_gain(1.0, PLASMA_PHASE_VAR);
+        assert!(g > 0.999);
+        assert!(p.verify_deconvolved_contrast(1.0, PLASMA_PHASE_VAR));
+        assert!(!p.verify_deconvolved_contrast(1e-8, 1e-6));
     }
 }

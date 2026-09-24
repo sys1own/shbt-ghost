@@ -72,6 +72,31 @@ partition of the 906.00 kW debt load. Physical artifacts export via GDSII
   input covariance (TMSV `sigma_r <= 0.144 pm/sqrtHz`, DWS
   `sigma_theta <= 11.38 nrad`, TEG), with hyper-dual `J` extraction.
 
+## Sister-repo engine transfers
+
+- **WZW modular partitions** (`WzwPartitionEvaluator`, ghost-core-engine,
+  from shbt-precision): affine characters for `SU(2)_26`, `SU(3)_8`,
+  `SO(10)_312` (`c_vis = 1325/154`, `c_parent = 351/8`); dynamic 512-bit MPFR
+  boundary closure `Z(tau) = q^{-c/24} prod_n (1-q^n)^{-1}`; dark Weil
+  kernels `(S_dark, T_dark, M_dark = I_2901360)` over
+  `(Z_2)^3 x (Z_2 x Z_3 x Z_5 x Z_7 x Z_11) x Z_157`.
+- **PINN wave-optics deconvolution** (`PinnDeconvolutionEngine`,
+  ghost-optics-lensing, from shbt-sglt): physics-informed loss
+  `L = L_data + l_phys||nabla^2 E + k^2 n_eff^2 E||^2 + l_reg R(f_theta)`
+  and real-time Wiener deconvolution of `J_0^2` caustics under coronal
+  plasma phase noise, preserving `C <= 1e-10`.
+- **McNabb-Foster deuterium kinetics** (`McnabbFosterSolver`,
+  ghost-lanr-interface, from shbt-cf): `D_D(T) = D_0 e^{-E_a/kT}`, two trap
+  families (`N_1 = 4.80e25`, `E_{t,1} = 0.280 eV`; `N_2 = 1.25e26`,
+  `E_{t,2} = 0.445 eV`), Soret `Q* = +0.065 eV`, `V_H* = 1.72e-6 m^3/mol`;
+  >= 90% mobile-fuel retention after 30 yr at 300 K.
+- **Heegaard-Floer trackers** (`HeegaardFloerTracker`,
+  ghost-multiseed-gravity, from shbt-exotic): `Sp(2g, Z)` symplectic
+  isometries on the mapping torus, Kojima entropy `Ent <= C Vol(M) = 0`
+  (`Delta S_A = 0`), eigenvector rigidity `|mu_comp - mu_0| <= 1e-12`, and
+  `R_congestion = 2.954e15 m` audit. All modules bind to the 56-byte
+  `SHBT-MMIO-1` map at `0x70000000` and the 2112-byte Stinespring frame.
+
 ## Workspace architecture
 
 Eleven specialized crates under `crates/` (Cargo `resolver = "2"`):

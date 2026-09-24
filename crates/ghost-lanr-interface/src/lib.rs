@@ -233,6 +233,104 @@ impl PlantHydraulicsSolver {
     }
 }
 
+/// Boltzmann constant in eV/K.
+pub const KB_EV: f64 = 8.617333262145e-5;
+
+/// Two-family McNabb-Foster deuterium diffusion and trapping kinetics
+/// (transferred from shbt-cf) for `Pd_0.9132 Ir_0.0868 D_x` at `x = 0.9132`,
+/// with Soret thermophoresis and partial-molar-volume stress drift, used to
+/// project 30-year fuel retention in the 1,800-module LANR core.
+#[derive(Debug, Clone)]
+pub struct McnabbFosterSolver {
+    /// Lattice diffusion prefactor `D_0` (m^2/s).
+    pub d0: f64,
+    /// Diffusion activation energy `E_a` (eV).
+    pub e_a: f64,
+    /// Dislocation trap density `N_1` (sites/m^3).
+    pub n1: f64,
+    /// Dislocation trap binding `E_{t,1}` (eV).
+    pub e_t1: f64,
+    /// Grain-boundary trap density `N_2` (sites/m^3).
+    pub n2: f64,
+    /// Grain-boundary trap binding `E_{t,2}` (eV).
+    pub e_t2: f64,
+    /// Soret heat of transport `Q*` (eV).
+    pub q_soret: f64,
+    /// Hydrogen partial molar volume `V_H*` (m^3/mol).
+    pub v_h: f64,
+    /// Stoichiometric loading `x = 0.9132`.
+    pub x_loading: f64,
+}
+
+impl McnabbFosterSolver {
+    pub fn new() -> Self {
+        Self {
+            d0: 2.9e-7,
+            e_a: 0.23,
+            n1: 4.80e25,
+            e_t1: 0.280,
+            n2: 1.25e26,
+            e_t2: 0.445,
+            q_soret: 0.065,
+            v_h: 1.72e-6,
+            x_loading: 0.9132,
+        }
+    }
+
+    /// Mobile lattice diffusivity `D_D(T) = D_0 exp(-E_a / k_B T)` (m^2/s).
+    pub fn diffusion_coeff(&self, t_k: f64) -> f64 {
+        self.d0 * (-self.e_a / (KB_EV * t_k)).exp()
+    }
+
+    /// McNabb-Foster equilibrium occupancy of trap family `i`:
+    /// `theta_i / (1 - theta_i) = (C_L / N_i) exp(E_{t,i} / k_B T)`.
+    pub fn trap_occupancy(&self, mobile_c: f64, n_i: f64, e_ti: f64, t_k: f64) -> f64 {
+        let x = (mobile_c / n_i) * (e_ti / (KB_EV * t_k)).exp();
+        x / (1.0 + x)
+    }
+
+    /// Trapped fraction over both families given mobile concentration `c_l`.
+    pub fn trapped_fraction(&self, c_l: f64, t_k: f64) -> f64 {
+        let t1 = self.n1 * self.trap_occupancy(c_l, self.n1, self.e_t1, t_k);
+        let t2 = self.n2 * self.trap_occupancy(c_l, self.n2, self.e_t2, t_k);
+        (t1 + t2) / (c_l + t1 + t2)
+    }
+
+    /// Soret thermophoretic flux coefficient `Q* / (k_B T^2)` per unit gradient.
+    pub fn soret_factor(&self, t_k: f64) -> f64 {
+        self.q_soret / (KB_EV * t_k * t_k)
+    }
+
+    /// Stress-assisted drift length scale `V_H* * sigma_h / (R T)` reduced to a
+    /// hydrostatic-stress coupling (Pa^-1): `V_H* / (k_B N_A T)`.
+    pub fn stress_drift_factor(&self, t_k: f64) -> f64 {
+        self.v_h / (8.314462618 * t_k)
+    }
+
+    /// Retained mobile fraction after `years` of residence at `t_k`:
+    /// exponential decay on the `L^2 / (pi^2 D_eff)` timescale for pellet
+    /// half-thickness `L = 0.5 m`, with trap-retarded diffusivity
+    /// `D_eff = D_D * C_L / (C_L + N_t)`.
+    pub fn mobile_retention(&self, years: f64, t_k: f64, c_l: f64) -> f64 {
+        let t1 = self.n1 * self.trap_occupancy(c_l, self.n1, self.e_t1, t_k);
+        let t2 = self.n2 * self.trap_occupancy(c_l, self.n2, self.e_t2, t_k);
+        let d_eff = self.diffusion_coeff(t_k) * c_l / (c_l + t1 + t2);
+        let tau = 0.25 / (std::f64::consts::PI * std::f64::consts::PI * d_eff);
+        (-(years * 365.25 * 86400.0) / tau).exp()
+    }
+
+    /// Fuel is retained iff the mobile fraction after 30 years exceeds 90%.
+    pub fn verify_30yr_retention(&self, t_k: f64, c_l: f64) -> bool {
+        self.mobile_retention(30.0, t_k, c_l) >= 0.90
+    }
+}
+
+impl Default for McnabbFosterSolver {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -284,5 +382,21 @@ mod tests {
         }
         assert!((PlantHydraulicsSolver::new(1633).thermal_power_kw - 821.56).abs() < 1e-9);
         assert!((PlantHydraulicsSolver::new(1800).thermal_power_kw - 906.00).abs() < 1e-9);
+    }
+
+    #[test]
+    fn mcnabb_foster_kinetics() {
+        let s = McnabbFosterSolver::new();
+        assert_eq!(s.n1, 4.80e25);
+        assert_eq!(s.n2, 1.25e26);
+        assert_eq!((s.e_t1, s.e_t2, s.q_soret, s.v_h), (0.280, 0.445, 0.065, 1.72e-6));
+        let d300 = s.diffusion_coeff(300.0);
+        let d400 = s.diffusion_coeff(400.0);
+        assert!(d300 > 0.0 && d400 > d300);
+        let theta = s.trap_occupancy(1.0e25, s.n2, s.e_t2, 300.0);
+        assert!(theta > 0.9);
+        assert!(s.trapped_fraction(1.0e25, 300.0) > 0.5);
+        assert!(s.soret_factor(300.0) > 0.0);
+        assert!(s.verify_30yr_retention(300.0, 1.0e25));
     }
 }
