@@ -1,0 +1,10 @@
+[package]
+name = "ghost_uncertainty_uq"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "ghost_uncertainty_uq"
+path = "src/lib.rs"
+
+[dependencies]

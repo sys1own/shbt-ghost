@@ -9,6 +9,9 @@ members = [
     "crates/ghost-lanr-interface",
     "crates/ghost-hil-microkernel",
     "crates/ghost-gpu-acceleration",
+    "crates/ghost-tqec-dark-ledger",
+    "crates/ghost-uncertainty-uq",
+    "crates/ghost-eda-exporters",
 ]
 
 [workspace.dependencies]

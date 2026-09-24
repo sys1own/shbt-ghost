@@ -6,7 +6,6 @@
 //! `alpha_seed = d1 * m_P / N_total = 26 * m_P / e^33`
 //! evaluated under 512-bit MPFR arithmetic (via `rug`).
 
-use rug::ops::Pow;
 use rug::{Float, Integer};
 
 /// MPFR mantissa width used for every boundary computation.
