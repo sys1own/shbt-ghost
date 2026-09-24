@@ -2,3 +2,8 @@ target/
 build/
 __pycache__/
 *.pyc
+*.aux
+*.log
+*.out
+*.bib
+ghostNotes.bib
