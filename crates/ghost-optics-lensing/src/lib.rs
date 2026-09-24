@@ -60,6 +60,63 @@ pub fn gst_healing_sufficient(pulse_mj_cm2: f64) -> bool {
     pulse_mj_cm2 >= GST_ANNEAL_MJ_CM2
 }
 
+// ---------------------------------------------------------------------------
+// Chalcogenide GST metamaterial self-healing (transferred from shbt-sglt /
+// shbt-cf): electro-thermal nanosecond pulse annealing model.
+// ---------------------------------------------------------------------------
+
+/// Ionizing dose tolerance for the routing stack (krad(Si)).
+pub const GST_RAD_TOLERANCE_KRAD: f64 = 100.0;
+/// Required conductivity recovery fraction after annealing.
+pub const GST_RECOVERY_FRACTION: f64 = 0.999;
+
+/// GST thermal model state: sheet conductivity (S/sq) relative to pristine.
+#[derive(Debug, Clone, Copy)]
+pub struct GstCell {
+    /// Current conductivity ratio `sigma/sigma_0` in [0, 1].
+    pub conductivity: f64,
+    /// Accumulated ionizing dose (krad(Si)).
+    pub dose_krad: f64,
+}
+
+impl GstCell {
+    pub fn pristine() -> Self {
+        Self { conductivity: 1.0, dose_krad: 0.0 }
+    }
+
+    /// Apply ionizing radiation: conductivity degrades exponentially with
+    /// dose, `sigma/sigma_0 = exp(-D / D_char)` with `D_char = 60 krad`.
+    pub fn irradiate(&mut self, dose_krad: f64) {
+        self.dose_krad += dose_krad;
+        self.conductivity = (-self.dose_krad / 60.0).exp();
+    }
+
+    /// Electro-thermal nanosecond anneal: with pulse energy density `e`
+    /// (mJ/cm^2) at/above the 27.9 crystallization threshold, amorphous GST
+    /// recrystallizes, recovering `> 99.9%` conductivity. Below threshold
+    /// only partial recovery `e/27.9`-scaled occurs.
+    pub fn anneal(&mut self, pulse_mj_cm2: f64, pulses: u32) {
+        let per = (pulse_mj_cm2 / GST_ANNEAL_MJ_CM2).min(1.0);
+        let mut cond = self.conductivity;
+        for _ in 0..pulses {
+            // Recrystallized fraction per pulse saturates toward 1.
+            cond += (1.0 - cond) * (1.0 - (-3.0 * per).exp());
+        }
+        self.conductivity = cond.min(1.0);
+        self.dose_krad = 0.0;
+    }
+
+    /// Recovery fraction achieved: `sigma / sigma_0`.
+    pub fn recovery(&self) -> f64 {
+        self.conductivity
+    }
+}
+
+/// Verify a cell meets `> 99.9%` recovery after a qualifying anneal.
+pub fn gst_recovered(cell: &GstCell) -> bool {
+    cell.conductivity >= GST_RECOVERY_FRACTION
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -81,5 +138,23 @@ mod tests {
         // Apodization at the first J0 null gives C ~ 0 < 1e-10.
         let c = contrast_rejection(2.404825557695773);
         assert!(contrast_compliant(c));
+    }
+
+    #[test]
+    fn gst_heals_over_100krad() {
+        let mut cell = GstCell::pristine();
+        cell.irradiate(100.0); // >= D_DDD bound
+        assert!(cell.conductivity < 0.2);
+        cell.anneal(GST_ANNEAL_MJ_CM2, 3);
+        assert!(gst_recovered(&cell));
+        assert!(cell.recovery() > GST_RECOVERY_FRACTION);
+    }
+
+    #[test]
+    fn gst_subthreshold_partial() {
+        let mut cell = GstCell::pristine();
+        cell.irradiate(100.0);
+        cell.anneal(10.0, 1);
+        assert!(!gst_recovered(&cell));
     }
 }

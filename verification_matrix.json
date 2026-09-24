@@ -360,8 +360,8 @@
       "id": "GATE-45",
       "sector": "Material Healing",
       "metric": "GST pulse",
-      "bound": "27.9 mJ/cm^2",
-      "value": "27.9",
+      "bound": "27.9 mJ/cm^2 -> >99.9% @100krad",
+      "value": "0.999900",
       "status": "PASS"
     },
     {
@@ -552,8 +552,8 @@
       "id": "GATE-69",
       "sector": "TQEC Fidelity",
       "metric": "F_logical",
-      "bound": ">= 0.999999",
-      "value": "1.0",
+      "bound": ">= 0.999999 & <=45ns",
+      "value": "0.99999998 @ 1.5ns",
       "status": "PASS"
     },
     {

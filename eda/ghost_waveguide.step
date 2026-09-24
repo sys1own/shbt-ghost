@@ -1,0 +1,14 @@
+ISO-10303-21;
+HEADER;
+FILE_DESCRIPTION(('Sapphire dielectric waveguide'),'2;1');
+FILE_NAME('shbt_ghost_waveguide.step','2026-09-24T00:00:00',('SHBT'),('SHBT'),'ghost-eda-exporters','','');
+FILE_SCHEMA(('AUTOMOTIVE_DESIGN'));
+ENDSEC;
+DATA;
+#1=CARTESIAN_POINT('ORIGIN',(0.,0.,0.));
+#2=DIRECTION('Z',(0.,0.,1.));
+#3=AXIS2_PLACEMENT_3D('',#1,#2,$);
+#4=CYLINDRICAL_SURFACE('',#3,0.5);
+#5=CYLINDER('',#3,0.5,25.0);
+ENDSEC;
+END-ISO-10303-21;

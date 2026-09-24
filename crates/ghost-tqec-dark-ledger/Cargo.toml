@@ -1,0 +1,10 @@
+[package]
+name = "ghost_tqec_dark_ledger"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "ghost_tqec_dark_ledger"
+path = "src/lib.rs"
+
+[dependencies]
