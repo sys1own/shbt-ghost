@@ -11,12 +11,6 @@ members = [
     "crates/ghost-gpu-acceleration",
 ]
 
-[workspace.package]
-version = "1.0.0"
-authors = ["SHBT Systems Architecture Group <sys1own@github.com>"]
-edition = "2021"
-license = "MIT OR Apache-2.0"
-
 [workspace.dependencies]
 rug = { version = "1.22", default-features = false, features = ["integer", "float"] }
 glam = "0.24"
