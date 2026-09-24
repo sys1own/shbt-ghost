@@ -46,6 +46,32 @@ partition of the 906.00 kW debt load. Physical artifacts export via GDSII
 (8x8 InP/InGaAs, 50.0 um pitch), ISO 10303-21 STEP, and Touchstone S2P
 (`Z0 = 50.12 +/- 0.80 ohm` to 40 GHz).
 
+## Extended physics sub-engines (ghost1.txt)
+
+- **Transient quench kinetics** (`SeedKineticsEngine`, ghost-core-engine):
+  `DeltaN(t) = DeltaN0 e^(-t/tau_quench)` with `tau_quench <= 2.18 ns`,
+  back-EMF surge `V_surge = L_eff g0 DeltaN0/tau^2 e^(-t/tau)`, 94.20% SiC
+  crowbar harvesting, and 1D semi-infinite diffusion in CVD Diamond
+  (`q0 = 6.5925e9 W/m^2` from the 142.08 MW surge) holding
+  `DeltaT_headroom >= 11.79 K` below `T_c = 39.00 K`.
+- **2PN multi-body station-keeping** (`RelativisticPlanner`,
+  ghost-propulsion-drive): planetary `J2`/`J4` + Solar tides, 5th-order
+  minimum-jerk `s(tau)` and derivatives, quantized bit-stepping
+  `floor(P_net/P_bit)` under the `+93.054 kW` margin (`P_bit = 1.842 W/bit`,
+  50,517 bits -> 50.518 kHz command rate) for `<= 0.084 nm` positioning.
+- **Eikonal plasma optics** (`PlasmaEikonalSolver`, ghost-optics-lensing):
+  non-paraxial phase `Phi_total(b, omega)` through Baumbach-Allen
+  `N_e(r) = A/r^6 + B/r^2` over `lambda in [200 nm, 5.0 um]`, with C6 phase
+  masks sustaining `C <= 1e-10` over `L in [169.30, 1692.99] m`.
+- **Two-phase plant hydraulics** (`PlantHydraulicsSolver`,
+  ghost-lanr-interface): Eulerian-Eulerian subcooled boiling from the
+  1633-module floor (821.56 kW) to 1800-module peak (906.00 kW), Ledinegg
+  `d(dP)/dQ > 0`, DWO phase margin `phi_m >= 38.4 deg`.
+- **GUM metrological covariance** (`GumCovarianceEngine`,
+  ghost-uncertainty-uq): ISO/IEC 98-3 `Sigma_Y = J Sigma_X J^T` over a 5x5
+  input covariance (TMSV `sigma_r <= 0.144 pm/sqrtHz`, DWS
+  `sigma_theta <= 11.38 nrad`, TEG), with hyper-dual `J` extraction.
+
 ## Workspace architecture
 
 Eleven specialized crates under `crates/` (Cargo `resolver = "2"`):

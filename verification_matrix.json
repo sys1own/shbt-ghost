@@ -145,7 +145,7 @@
       "sector": "Station-Keeping",
       "metric": "drift",
       "bound": "< 0.084 nm",
-      "value": "9.24e-6",
+      "value": "1.663e-06",
       "status": "PASS"
     },
     {
@@ -424,8 +424,8 @@
       "id": "GATE-53",
       "sector": "Substrate",
       "metric": "K_diamond",
-      "bound": ">= 2000 W/mK",
-      "value": "2000",
+      "bound": ">= 2000 W/mK & headroom >=11.79K",
+      "value": "11.82 K",
       "status": "PASS"
     },
     {
@@ -440,8 +440,8 @@
       "id": "GATE-55",
       "sector": "MgB2 Tc",
       "metric": "39.0 K",
-      "bound": "headroom",
-      "value": "39.0",
+      "bound": "headroom + Ledinegg/DWO",
+      "value": "2.15/39.0deg",
       "status": "PASS"
     },
     {
@@ -480,7 +480,7 @@
       "id": "GATE-60",
       "sector": "Quench",
       "metric": "tau_quench",
-      "bound": "<= 2.18 ns",
+      "bound": "<= 2.18 ns + decay e^-1",
       "value": "2.18",
       "status": "PASS"
     },
