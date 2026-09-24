@@ -1,0 +1,13 @@
+[package]
+name = "ghost_propulsion_drive"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "ghost_propulsion_drive"
+path = "src/lib.rs"
+
+[dependencies]
+glam = { workspace = true }
+rug = { workspace = true }
+ghost_core_engine = { path = "../ghost-core-engine" }

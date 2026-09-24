@@ -1,0 +1,12 @@
+[package]
+name = "ghost_kinematic_wake"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "ghost_kinematic_wake"
+path = "src/lib.rs"
+
+[dependencies]
+rug = { workspace = true }
+ghost_core_engine = { path = "../ghost-core-engine" }
