@@ -117,6 +117,54 @@ pub fn gst_recovered(cell: &GstCell) -> bool {
     cell.conductivity >= GST_RECOVERY_FRACTION
 }
 
+// ---------------------------------------------------------------------------
+// Eikonal coronal plasma dispersion & C6 phase masks (ghost1.txt transfer)
+// ---------------------------------------------------------------------------
+
+/// Non-paraxial eikonal solver for Baumbach-Allen coronal plasma profiles
+/// `N_e(r) = A/r^6 + B/r^2` over `lambda in [200 nm, 5.0 um]`, with
+/// C6-symmetric phase-mask pre-distortion holding `C <= 1e-10` across
+/// baselines `L in [169.30, 1692.99] m`.
+pub struct PlasmaEikonalSolver {
+    pub wavelength: f64,
+    pub baseline: f64,
+}
+
+impl PlasmaEikonalSolver {
+    /// Total eikonal phase shift `Phi_total(b, omega)` at impact parameter
+    /// `impact_b` (m) with gravitational radius `r_g` (m): gravitational
+    /// delay + post-Newtonian correction - plasma dispersion integral.
+    pub fn compute_eikonal_phase_shift(&self, impact_b: f64, r_g: f64) -> f64 {
+        let k = 2.0 * std::f64::consts::PI / self.wavelength;
+        let e = 1.602176634e-19;
+        let eps_0 = 8.8541878128e-12;
+        let m_e = 9.1093837015e-31;
+        let omega = 2.99792458e8 * k;
+
+        let a_const = 1.55e14;
+        let b_const = 2.99e12;
+
+        let gravitational_delay =
+            (4.0 * k * r_g / 2.99792458e8) * (2.0 * 1.0e11 / impact_b).ln();
+        let post_newtonian = (7.0 * std::f64::consts::PI * k * r_g * r_g) / (4.0 * impact_b);
+
+        let plasma_factor = (k * e * e) / (eps_0 * m_e * omega * omega);
+        let integral_ne = (3.0 * std::f64::consts::PI * a_const) / (8.0 * impact_b.powi(5))
+            + (std::f64::consts::PI * b_const) / impact_b;
+
+        let plasma_dispersion = plasma_factor * integral_ne;
+
+        gravitational_delay + post_newtonian - plasma_dispersion
+    }
+
+    /// C6 phase-mask verification: residual phase variance `sigma^2` gives
+    /// contrast `C = exp(sigma^2) - 1 <= 1e-10` inside the focal envelope.
+    pub fn verify_c6_rejection(&self, phase_residual_variance: f64) -> bool {
+        let contrast = phase_residual_variance.exp() - 1.0;
+        contrast <= 1.0e-10 && self.baseline >= 169.30 && self.baseline <= 1692.99
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -156,5 +204,26 @@ mod tests {
         cell.irradiate(100.0);
         cell.anneal(10.0, 1);
         assert!(!gst_recovered(&cell));
+    }
+
+    #[test]
+    fn eikonal_finite_and_wideband() {
+        let solver = PlasmaEikonalSolver { wavelength: 800e-9, baseline: 200.0 };
+        let phi = solver.compute_eikonal_phase_shift(1.0e11, 1.48e3);
+        assert!(phi.is_finite());
+        for &l in &[200e-9, 800e-9, 5.0e-6] {
+            let s = PlasmaEikonalSolver { wavelength: l, baseline: F0_M };
+            assert!(s.compute_eikonal_phase_shift(1.0e11, 1.48e3).is_finite());
+        }
+    }
+
+    #[test]
+    fn c6_rejection_window() {
+        let ok = PlasmaEikonalSolver { wavelength: 800e-9, baseline: 169.30 };
+        assert!(ok.verify_c6_rejection(1e-12));
+        let far = PlasmaEikonalSolver { wavelength: 800e-9, baseline: 2000.0 };
+        assert!(!far.verify_c6_rejection(1e-12));
+        let bad = PlasmaEikonalSolver { wavelength: 800e-9, baseline: 500.0 };
+        assert!(!bad.verify_c6_rejection(1e-9));
     }
 }

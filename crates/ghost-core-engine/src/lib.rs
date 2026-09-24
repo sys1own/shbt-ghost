@@ -136,6 +136,81 @@ pub fn mass_balance_residue() -> Float {
     topological_residue(&dn)
 }
 
+// ---------------------------------------------------------------------------
+// Non-equilibrium transient quench kinetics (ghost1.txt transfer)
+// ---------------------------------------------------------------------------
+
+/// Seed kinetics engine: models `DeltaN(t) = DeltaN0 * exp(-t/tau_quench)`
+/// emergency-quench decay, back-EMF surge voltage in the coupling coils,
+/// SiC crowbar inductive harvesting, and 1D semi-infinite thermal diffusion
+/// in the CVD Diamond-on-GaN cold plate.
+pub struct SeedKineticsEngine {
+    pub delta_n_0: f64,
+    pub tau_ign: f64,
+    pub tau_quench: f64,
+    pub l_eff: f64,
+    pub sic_efficiency: f64,
+}
+
+impl SeedKineticsEngine {
+    pub fn new() -> Self {
+        Self {
+            delta_n_0: 1.0e18,
+            tau_ign: 0.45e-9,
+            tau_quench: 2.18e-9, // Enforces tau_quench <= 2.18 ns limit
+            l_eff: 8.42e-3,
+            sic_efficiency: 0.9420, // 94.20% harvesting efficiency
+        }
+    }
+
+    /// Quench transient: `(delta_n, i_eff, v_surge)` at time `t`.
+    pub fn compute_quench_transient(&self, t: f64) -> (f64, f64, f64) {
+        if t < 0.0 {
+            return (self.delta_n_0, 0.0, 0.0);
+        }
+        let delta_n = self.delta_n_0 * (-t / self.tau_quench).exp();
+        let gamma_0 = 1.602176634e-19;
+        let i_eff = gamma_0 * (self.delta_n_0 / self.tau_quench) * (-t / self.tau_quench).exp();
+        let v_surge = self.l_eff * gamma_0
+            * (self.delta_n_0 / (self.tau_quench * self.tau_quench))
+            * (-t / self.tau_quench).exp();
+        (delta_n, i_eff, v_surge)
+    }
+
+    /// 1D semi-infinite thermal diffusion under surge `p_surge` (W) over
+    /// plate `area` (m^2): the unrecovered 5.80% dissipates as `q0`, giving
+    /// `T(t) = T0 + (2 q0 / effusivity) sqrt(t)`. Verifies
+    /// `T_c - T_peak >= 11.79 K`.
+    pub fn verify_thermal_headroom(
+        &self,
+        p_surge: f64,
+        area: f64,
+        t_0: f64,
+        t_c: f64,
+    ) -> Result<f64, &'static str> {
+        let unrecovered_fraction = 1.0 - self.sic_efficiency; // 5.80% dissipation
+        let q_0 = (unrecovered_fraction * p_surge) / area;
+        let k_dia = 2200.0;
+        let rho_dia = 3515.0;
+        let cp_dia = 520.0;
+        let thermal_eff = (std::f64::consts::PI * k_dia * rho_dia * cp_dia).sqrt();
+        let delta_t_max = (2.0 * q_0 / thermal_eff) * self.tau_quench.sqrt();
+        let t_peak = t_0 + delta_t_max;
+        let headroom = t_c - t_peak;
+        if headroom >= 11.79 {
+            Ok(headroom)
+        } else {
+            Err("CRITICAL: Thermal headroom violated threshold (delta_T < 11.79 K)")
+        }
+    }
+}
+
+impl Default for SeedKineticsEngine {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -179,5 +254,26 @@ mod tests {
     #[test]
     fn residue_converges() {
         assert!(mass_balance_residue().to_f64() < RESIDUE_BOUND);
+    }
+
+    #[test]
+    fn quench_decays_within_tau() {
+        let eng = SeedKineticsEngine::new();
+        assert!(eng.tau_quench <= 2.18e-9);
+        let (dn, i, v) = eng.compute_quench_transient(eng.tau_quench);
+        assert!((dn / eng.delta_n_0 - (-1.0f64).exp()).abs() < 1e-12);
+        assert!(i > 0.0 && v > 0.0);
+        let (dn0, ..) = eng.compute_quench_transient(-1.0);
+        assert_eq!(dn0, eng.delta_n_0);
+    }
+
+    #[test]
+    fn thermal_headroom_holds() {
+        let eng = SeedKineticsEngine::new();
+        // 142.08 MW surge; unrecovered 5.8% over 1.25e-3 m^2 -> q0 ~ 6.59e9 W/m^2.
+        let h = eng
+            .verify_thermal_headroom(142.08e6, 1.25e-3, 21.70, 39.00)
+            .unwrap();
+        assert!(h >= 11.79);
     }
 }

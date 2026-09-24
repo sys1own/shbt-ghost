@@ -130,10 +130,10 @@ impl SplitMix64 {
 }
 
 /// Joint measurement model `Y(jit, drift, m) = jit + drift * m`
-/// evaluated over the three uncertainty inputs:
-///   - TMSV phase jitter   `sigma_jit  = 0.0084 pm/sqrtHz`-equivalent
-///   - thermal drift        `sigma_drift` (fractional)
-///   - seed mass           `sigma_m` (fractional)
+/// evaluated over the three uncertainty inputs — TMSV phase jitter
+/// `sigma_jit = 0.0084 pm/sqrtHz`-equivalent, thermal drift `sigma_drift`
+/// (fractional), and seed mass `sigma_m` (fractional).
+///
 /// Returns `(mean, std, three_sigma_bounds)` estimated with `n` samples
 /// drawn in sharded batches (parallel-safe, deterministic).
 pub fn monte_carlo_bounds(
@@ -165,6 +165,82 @@ pub fn monte_carlo_bounds(
 /// GUM S1 compliance: `n >= 1e7` samples budget check.
 pub fn gum_budget_compliant(n: usize) -> bool {
     n >= MC_SAMPLES
+}
+
+// ---------------------------------------------------------------------------
+// ISO/IEC Guide 98-3 (GUM) covariance engine (ghost1.txt transfer)
+// ---------------------------------------------------------------------------
+
+impl HDual {
+    /// Constructor form used by the GUM engine (`eps12` seeded to 0).
+    pub fn new(real: f64, eps1: f64, eps2: f64) -> Self {
+        Self { v: real, e1: eps1, e2: eps2, e12: 0.0 }
+    }
+}
+
+/// Extract a 5x5 Jacobian column-wise by evaluating `f` with unit seeds on
+/// each input axis. `f(input_hduals) -> [output; 5]`; `jacobian[i][k]` holds
+/// `dY_i/dX_k` taken from the `e1` part when seeding axis `k` via `e1`.
+pub fn jacobian_columns(
+    f: impl Fn(&[HDual; 5]) -> [HDual; 5],
+    x: &[f64; 5],
+) -> [[f64; 5]; 5] {
+    let mut j = [[0.0; 5]; 5];
+    for k in 0..5 {
+        let mut seeds = [HDual::constant(0.0); 5];
+        for (i, s) in seeds.iter_mut().enumerate() {
+            *s = HDual::new(x[i], if i == k { 1.0 } else { 0.0 }, 0.0);
+        }
+        let y = f(&seeds);
+        for i in 0..5 {
+            j[i][k] = y[i].e1;
+        }
+    }
+    j
+}
+
+/// GUM output-covariance engine: `Sigma_Y = J Sigma_X J^T` over the 5x5
+/// input covariance combining TMSV phase noise
+/// (`sigma_r <= 0.144 pm/sqrtHz`), DWS tracking jitter
+/// (`sigma_theta <= 11.38 nrad`), and TEG uncertainties.
+pub struct GumCovarianceEngine {
+    pub covariance_x: [[f64; 5]; 5],
+}
+
+impl GumCovarianceEngine {
+    /// Input covariance with the spec noise levels on the diagonal.
+    pub fn nominal() -> Self {
+        let mut c = [[0.0; 5]; 5];
+        c[0][0] = 0.144e-3 * 0.144e-3; // TMSV phase (nm/sqrtHz)^2
+        c[1][1] = 11.38e-9 * 11.38e-9; // DWS jitter (rad)^2
+        c[2][2] = 1e-4;                 // thermal drift (fractional)^2
+        c[3][3] = 1e-6;                 // seed mass (fractional)^2
+        c[4][4] = 1e-8;                 // TEG (fractional)^2
+        Self { covariance_x: c }
+    }
+
+    /// `Sigma_Y = J Sigma_X J^T` for a 5x5 `jacobian`.
+    pub fn propagate_covariance(&self, jacobian: &[[f64; 5]; 5]) -> [[f64; 5]; 5] {
+        let mut cov_y = [[0.0; 5]; 5];
+        for i in 0..5 {
+            for j in 0..5 {
+                let mut sum = 0.0;
+                for k in 0..5 {
+                    for l in 0..5 {
+                        sum += jacobian[i][k] * self.covariance_x[k][l] * jacobian[j][l];
+                    }
+                }
+                cov_y[i][j] = sum;
+            }
+        }
+        cov_y
+    }
+}
+
+impl Default for GumCovarianceEngine {
+    fn default() -> Self {
+        Self::nominal()
+    }
 }
 
 #[cfg(test)]
@@ -200,5 +276,28 @@ mod tests {
     #[test]
     fn gum_budget() {
         assert!(gum_budget_compliant(MC_SAMPLES));
+    }
+
+    #[test]
+    fn jacobian_and_covariance() {
+        // Y_i = (i+1) * X_k linear model -> J = diag(1..5).
+        let j = jacobian_columns(
+            |x| {
+                let mut y = [HDual::constant(0.0); 5];
+                for (i, y_i) in y.iter_mut().enumerate() {
+                    *y_i = x[i] * HDual::constant((i + 1) as f64);
+                }
+                y
+            },
+            &[0.0; 5],
+        );
+        for (i, row) in j.iter().enumerate() {
+            assert!((row[i] - (i + 1) as f64).abs() < 1e-15);
+        }
+        let eng = GumCovarianceEngine::nominal();
+        let cy = eng.propagate_covariance(&j);
+        assert!(cy[0][0] > 0.0 && cy[4][4] > eng.covariance_x[4][4]);
+        // Diagonal input + diagonal J => diagonal output.
+        assert!(cy[0][1].abs() < 1e-30);
     }
 }
