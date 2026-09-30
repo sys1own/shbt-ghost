@@ -199,5 +199,7 @@ All seventy verification gates (`GATE-01` through `GATE-70`) validate with statu
 * **Gates 66–70 (Dark Ledger TQEC & Physical Artifacts):** TQEC syndrome decode latency `<= 45 ns`, logical fidelity `F_logical >= 0.999999`, GDSII PDK DRC/LVS zero-error clearance, and Touchstone S2P characteristic impedance `Z0 = 50.12 +/- 0.80 ohm`.
 
 ## License
+
 MIT License. See `LICENSE` for details.
+
 ---
