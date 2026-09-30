@@ -1,4 +1,4 @@
-# shbt-ghost
+# Static Holographic Boundary Theory (SHBT) — Synthetic Ghost Seed Propulsion and Metric Control Digital Twin
 
 Multi-physics digital twin simulator for synthetic **ghost seed** propulsion, multi-seed artificial gravity, and gravitational optics under Static Holographic Boundary Theory (SHBT).
 
@@ -202,4 +202,4 @@ All seventy verification gates (`GATE-01` through `GATE-70`) validate with statu
 
 MIT License. See `LICENSE` for details.
 
-```
+---
