@@ -31,7 +31,7 @@ Synthetic optics span focal lengths from `f0 = 169.30 m` to `f_max = 1692.99 m` 
 
 ## SHBT Ecosystem Repository Architecture & Crosswalk
 
-`shbt-ghost` operates as the multi-seed gravity, propulsion, and fast metric-stabilization authority within the Static Holographic Boundary Theory (SHBT) digital twin network. The ecosystem establishes formal bidirectional technology transfers across eight specialized repositories:
+`shbt-ghost` operates as the multi-seed gravity, propulsion, and fast metric-stabilization authority within the Static Holographic Boundary Theory (SHBT) digital twin network. The ecosystem establishes formal bidirectional technology transfers across nine specialized repositories:
 
 | Repository | Domain Role | Inter-Repository Integration with `shbt-ghost` |
 | :--- | :--- | :--- |
@@ -43,6 +43,7 @@ Synthetic optics span focal lengths from `f0 = 169.30 m` to `f_max = 1692.99 m` 
 | [`sys1own/shbt-cf`](https://github.com/sys1own/shbt-cf) | Cold Fusion Authority & Power Ledger | Canonical power source for `shbt-ghost`. Specifies the 1,800-module LANR starter grid generating `999.054 kW_net` (`555.03 W` DC/cell, 33.804% TEG efficiency) to continuously balance the 906.00 kW Landauer debt with `+93.054 kW` operational margin. Supplies McNabb-Foster deuterium kinetics (`McnabbFosterSolver`) and two-phase Eulerian-Eulerian boiling models with Chaboche backstress cold-plate thermal fatigue analysis. `shbt-ghost` returns sub-2.50 ns PCSS optical interlocks and 94.20% SiC recovery crowbars. |
 | [`sys1own/shbt-recon`](https://github.com/sys1own/shbt-recon) | Macroscopic State Tracking & Causal GNC | Supplies macroscopic Stinespring dilation (`V_macro_unified` over `N ~ 10^20` to `10^28` particles) partitioning states into active residual (`eta_A = 10/33`, 640 B) and dark ledger (`eta_D = 23/33`, 1,472 B, 124 braids). Supplies 2PN harmonic metric formulations and causal lightcone authorization (`Delta s^2_2PN <= 0`) mapped to `SHBT-MMIO-1` (`0x28`–`0x2C`), as well as high-throughput lock-free POSIX SPSC shared-memory telemetry rings and 128-byte dual-cacheline C-ABI alignment conventions. |
 | [`sys1own/shbt-power`](https://github.com/sys1own/shbt-power) | Master Fusion Twin & Systems Integration | Master commercial aneutronic fusion platform (`p-11B` Graser power plant, 8,750 MW fusion / 7,832.903 MW net export). Directly integrates `shbt-ghost`'s sub-2.50 ns PCSS trigger logic, 94.20% SiC inductive recovery crowbars, and real-time ADM 3+1 metric stabilization routines (`beta^i -> 0`, `|det(g) + 1| <= 1e-12`). Reuses `ghost-multiseed-gravity`'s 3D tensor field projection for diamagnetic plasma fireball expansion against superconducting magnetic cushions, and harmonizes with the 70-gate verification harness. |
+| [`sys1own/shbt-warp`](https://github.com/sys1own/shbt-warp) | Holographic Warp Drive & Spacetime Engine | **Direct logic transfer.** `shbt-ghost` transfers its 3+1 hyperbolic CCZ4 numerical relativity solver with Gundlach constraint damping (κ<sub>1</sub> = 0.15, κ<sub>2</sub> = 0.0) and sub-2.5 ns PCSS optical crowbar interlock (94.20% SiC inductive recovery) into `shbt-warp`. In return, `shbt-warp` provides smooth Alcubierre shape functions f<sub>SHBT</sub>(r) and coordinate stress-energy tensors. |
 
 ### Upstream Subsystem Crosswalk Details
 
