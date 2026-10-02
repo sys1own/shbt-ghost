@@ -50,8 +50,8 @@ Synthetic optics span focal lengths from `f0 = 169.30 m` to `f_max = 1692.99 m` 
                         ┌─────────────────────────────┐
                         │   C11 Microkernel (FPGA)    │
                         │  5-phase dispatch @50.5kHz  │
-                        └──┬───────────────┬──────────┘
-             continuous tier│               │burst tier
+                        └──┬────────────────┬─────────┘
+            continuous tier│                │burst tier
         ┌──────────────────┴─┐           ┌──┴─────────────────────┐
         │  LANR starter grid │           │ 178m2Hf graser isomer  │
         │  1,800 modules     │  galvanic │  core, 376.99 kg       │
@@ -61,11 +61,11 @@ Synthetic optics span focal lengths from `f0 = 169.30 m` to `f_max = 1692.99 m` 
                  │  45.000 kW cryocoolers     ▼
                  │  48.054 kW habitat 1g   Borrmann cavity (ε_B=0.985)
                  │                            │ coherent γ beam
-                 │                     ┌──────▼──────────────┐
+                 │                     ┌──────▼───────────────┐
                  │                     │ 3-stage relativistic │
                  │                     │ DEC η_conv = 45.8%   │
                  │                     │ 15 kV → 400 kV DC    │
-                 │                     └──────┬──────────────┘
+                 │                     └──────┬───────────────┘
                  │                            ▼  ≤ 49.9449 TW
                  │                     ghost-seed photonic
                  │                     emitter microcavities
