@@ -44,33 +44,88 @@ Kinematic congestion wakes are cancelled by third-order momentum compensation en
 
 Synthetic optics span focal lengths from `f0 = 169.30 m` to `f_max = 1692.99 m` with Bessel `J0^2` caustics and `C <= 1e-10` coronagraph rejection. Relativistic causality is enforced by harmonic 2PN lightcone authorization `Delta s^2 <= 0` and a sub-2.50 ns GaN current-shunt quench (`tau <= 2.18 ns`, 94.20% SiC inductive energy recovery). Active error correction executes as a Union-Find + Blossom MWPM TQEC decode of the 124-braid dark ledger (`<= 45 ns`, `F_logical >= 0.999999`). Chalcogenide GST routing layers self-heal under 27.9 mJ/cm^2 optical anneal pulses (`> 99.9%` conductivity recovery after `>= 100 krad(Si)`), hyper-dual UQ extracts exact Hessians with GUM S1/S2 Monte Carlo (`N >= 1e7`) delivering 3-sigma confidence bounds, and the LANR cold plate carries 3D Chaboche backstress across a Pd-Ir/Ti/CVD-Diamond/TLP-Bond/OFHC-Cu stack under a 4-term RPI boiling partition of the 906.00 kW debt load. Physical artifacts export directly via GDSII (8x8 InP/InGaAs, 50.0 um pitch), ISO 10303-21 STEP, and Touchstone S2P (`Z0 = 50.12 +/- 0.80 ohm` to 40 GHz).
 
-## Dual-Power Dispatch Topology
+## System Topology
 
 ```
-                        ┌─────────────────────────────┐
-                        │   C11 Microkernel (FPGA)    │
-                        │  5-phase dispatch @50.5kHz  │
-                        └──┬────────────────┬─────────┘
-            continuous tier│                │burst tier
-        ┌──────────────────┴─┐           ┌──┴─────────────────────┐
-        │  LANR starter grid │           │ 178m2Hf graser isomer  │
-        │  1,800 modules     │  galvanic │  core, 376.99 kg       │
-        │  999.054 kW net    │◄─────────►│  500 TJ inventory      │
-        └────────┬───────────┘ separation└────┬───────────────────┘
-                 │ 906.000 kW Landauer debt   │ 10 GW – 109.05 TW γ
-                 │  45.000 kW cryocoolers     ▼
-                 │  48.054 kW habitat 1g   Borrmann cavity (ε_B=0.985)
-                 │                            │ coherent γ beam
-                 │                     ┌──────▼───────────────┐
-                 │                     │ 3-stage relativistic │
-                 │                     │ DEC η_conv = 45.8%   │
-                 │                     │ 15 kV → 400 kV DC    │
-                 │                     └──────┬───────────────┘
-                 │                            ▼  ≤ 49.9449 TW
-                 │                     ghost-seed photonic
-                 │                     emitter microcavities
-                 │                     ΔN(k) ≤ 2.7114e13 bits/step
-                 └──────────────► metric seed / traction loop
+ ╭────────────────────────────────────────────────────────────────────────────────────╮
+ │        SHBT-GHOST SYNTHETIC METRIC PROPULSION & GRAVITATIONAL WELL TOPOLOGY        │
+ ╰────────────────────────────────────────────────────────────────────────────────────╯
+
+ ┌── [ 1. CONTINUOUS POWER BALANCE & COHERENT ISOMER BURST RAIL ] ────────────────────┐
+ │                                                                                    │
+ │  ╭──────────────────────────╮ 999.054 kW DC @ 400V ╭────────────────────────────╮  │
+ │  │ 1,800-Module LANR Grid   │─────────────────────►│ Continuous Housekeeping    │  │
+ │  │ • 555.03 W net/cell      │                      │ Distribution Bus           │  │
+ │  │ • N_min = 1,633 (N+167)  │◄──┐                  ╰─────────────┬──────────────╯  │
+ │  ╰──────────────────────────╯   │ +48.00 kW TEG                  │                 │
+ │                                 │ Core Standby Heat              ▼                 │
+ │       ┌─────────────────────────┴──────────────────┐ ╭──────────────────────────╮  │
+ │       │                                            │ │ Landauer Entropy Debt    │  │
+ │  ╭────┴──────────────────────────────────────╮     │ │ • 906.000 kW non-shed    │  │
+ │  │ ¹⁷⁸ᵐ²Hf Nuclear Isomer Battery (500.0 TJ) │     │ │ • 312 Emitter Microcav.  │  │
+ │  │ • 376.99 kg | 40.0 keV Seed Laser Trigger │     │ ╰──────────────────────────╯  │
+ │  │ • Borrmann Graser: G=61.15, ε_B=0.985     │     │ Net Surplus: +93.054 kW       │
+ │  ╰──────────────────┬────────────────────────╯     └───────────────────────────────┘
+ │                     │ Coherent γ-burst (T_op ≤ 21.13 K, Headroom ΔT ≥ 11.79 K)     │
+ │                     ▼                                                              │
+ │  ╭──────────────────────────────────────────────────────────────────────────────╮  │
+ │  │ 3-Stage Relativistic DEC: η_conv = 45.8% (Compton 26.4% + Pair 12.1% + 7.3%) │  │
+ │  │ Variable 15 kV ➔ 400 kV DC Bus | Peak Electric Burst: 49.945 TW Net         │  │
+ │  ╰──────────────────────────────────────────────────────────────────────────────╯  │
+ └───────────────────────────────────────────────────┬────────────────────────────────┘
+                                                     │ High-Voltage Burst Injection
+                                                     ▼
+ ┌── [ 2. DISCRETE HOLOGRAPHIC TRACTION & KINEMATIC WAKE COMPENSATION ] ──────────────┐
+ │                                                                                    │
+ │  ╭──────────────────────────────────────────────────────────────────────────────╮  │
+ │  │ Discrete Bit-Stepping Propulsion Governor: ΔN(k) = ⌊ΔP_net / P_bit⌋           │  │
+ │  │ • Command Stepping Rate: 50.518 kHz | Energy per Bit: P_bit = 1.842 W/bit    │  │
+ │  │ • Synthetic Ghost Seed Mass: M_seed = α_seed · ΔN                            │  │
+ │  │   Coupling: α_seed = 26 m_P / e³³ = 1.3258316×10⁻⁵¹ M_sun/bit                │  │
+ │  ╰──────────────────────────────────────┬───────────────────────────────────────╯  │
+ │                                         │                                          │
+ │  ╭──────────────────────────────────────┴───────────────────────────────────────╮  │
+ │  │ 3rd-Order Kinematic Wake Compensation & Minimum-Jerk Flight Profile          │  │
+ │  │ • Wake Cancellation Lagrangian: |μ_comp − μ_0| ≤ 10⁻¹² (Eigenvector Rigidity)│  │
+ │  │ • 5th-Order Trajectory Profile: s(τ) = 10τ³ − 15τ⁴ + 6τ⁵ (max |s″| = 5.7735) │  │
+ │  │ • Relative Positioning Sensitivity: Δr ≤ 0.084 nm (TMSV σ_r ≤ 0.144 pm/√Hz)  │  │
+ │  ╰──────────────────────────────────────────────────────────────────────────────╯  │
+ └───────────────────────────────────────────────────┬────────────────────────────────┘
+                                                     │ Synthesized Metric Bias
+                                                     ▼
+ ┌── [ 3. 3+1 SPACETIME FOLIATION & MULTI-SEED METRIC SUPERPOSITION ] ────────────────┐
+ │                                                                                    │
+ │  ╭──────────────────────────────────────────────────────────────────────────────╮  │
+ │  │ Conformal & Covariant Z4 (CCZ4) Numerical Relativity Solver                  │  │
+ │  │ • Gundlach Damping: κ₁ = 0.15, κ₂ = 0.0 | CFL = 0.25 (RK4 Integration)       │  │
+ │  │ • ADM Shift Nulling: βⁱ ➔ 0 | Spacetime Lapse Lock: |det(g) + 1| ≤ 10⁻¹²    │  │
+ │  │ • Constraint Violation Damping: ‖H‖ < 10⁻¹²² Holographic Noise Floor         │  │
+ │  ╰──────────────────────────────────────┬───────────────────────────────────────╯  │
+ │                                         │                                          │
+ │  ╭──────────────────────────────────────┴───────────────────────────────────────╮  │
+ │  │ K-Seed Non-Linear Metric Superposition: g_mn = η_mn + ∑ h_mn^(i) + I_mn      │  │
+ │  │ • Cross-Coupling Correction: I_00 = +2.4189×10⁻³², I_kk = -I_00 / 3          │  │
+ │  │ • Linear Superposition Radius: R_congestion = 2.954×10¹⁵ m                   │  │
+ │  │ • Habitat Artificial Gravity: Non-rotational 1g Floor (g_z = 9.80665 m/s²)   │  │
+ │  ╰──────────────────────────────────────────────────────────────────────────────╯  │
+ └───────────────────────────────────────────────────┬────────────────────────────────┘
+                                                     │ Real-Time Register Telemetry
+                                                     ▼
+ ┌── [ 4. C11 MICROKERNEL HARDWARE CONTRACT & FAST OPTICAL INTERLOCK ] ───────────────┐
+ │                                                                                    │
+ │  ╭──────────────────────────────────────────────────────────────────────────────╮  │
+ │  │ Freestanding C11 shbt-os Microkernel Contract (shbt_ghost_mmio_t @ 0x70000000│  │
+ │  │ • Cacheline 0 (0x00–0x3F): System control, status, debt ledgers, mass words  │  │
+ │  │ • Cacheline 1 (0x40–0x7F): ADM lapse, shift, cryo telemetry, DEC bus meters  │  │
+ │  │ • Relativistic Causal Gate (0x28–0x2C): Enforces 2PN Interval Δs²_2PN ≤ 0    │  │
+ │  ╰──────────────────────────────────────┬───────────────────────────────────────╯  │
+ │                                         │                                          │
+ │  ╭──────────────────────────────────────┴───────────────────────────────────────╮  │
+ │  │ Sub-2.18 ns PCSS Optical Crowbar Interlock (Hard Trip Limit ≤ 2.50 ns)       │  │
+ │  │ • Photoconductive Switch Shunt: dI/dt ≤ 1.85×10¹⁴ A/s | dV/dt ≤ 4.20×10¹³ V/s│  │
+ │  │ • Inductive Energy Recovery: 94.20% routed via SiC crowbar into SMES storage │  │
+ │  ╰──────────────────────────────────────────────────────────────────────────────╯  │
+ ╰────────────────────────────────────────────────────────────────────────────────────╯
 ```
 
 ### Five-Phase Dispatch State Machine
