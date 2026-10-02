@@ -165,9 +165,9 @@ Static assertions pin `sizeof(shbt_ghost_mmio_t) == 128` and `offsetof(..., adm_
                                      │
     ┌────────────────────────────────┼───────────────────────────────┐
     ▼                                ▼                               ▼
- [shbt-power]                     [shbt-cf]                       [shbt-qc]
- Commercial Fusion Grid         1,800-Module LANR Array         Bare-Metal Microkernel &
- (8,750 MW p-11B Twin)          & Thermal-Hydraulics            Photonic Quantum Bus
+[shbt-power]                     [shbt-cf]                       [shbt-qc]
+Commercial Fusion Grid          1,800-Module LANR Array         Bare-Metal Microkernel &
+(8,750 MW p-11B Twin)           & Thermal-Hydraulics            Photonic Quantum Bus
     │                                │                               │
     └────────────────────────┬───────┴───────────────────────────────┘
                              ▼
