@@ -1,0 +1,17 @@
+[package]
+name = "ghost-audit"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "ghost_audit"
+path = "src/lib.rs"
+
+[[bin]]
+name = "ghost-audit"
+path = "src/main.rs"
+
+[dependencies]
+ghost_power_battery = { path = "../ghost-power-battery" }
+ghost_lanr_interface = { path = "../ghost-lanr-interface" }
+ghost_propulsion_drive = { path = "../ghost-propulsion-drive" }

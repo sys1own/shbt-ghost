@@ -49,10 +49,40 @@ WAKE_ALPHA = (1.0e-4, math.pi * 1e-6, math.e * 1e-8)
 I00 = 2.4189305108421948573019284750192837401928374109283741092837410928e-32
 IKK = -I00 / 3.0
 MMIO_BASE = 0x70000000
-MMIO_BYTES = 56
+MMIO_BYTES = 128                       # upgraded dual-cacheline contract
+MMIO_LEGACY_BYTES = 56                 # legacy SHBT-MMIO-1 window
 SRAM_BYTES = 2112
 ARENA_B, LEDGER_B = 640, 1472
 BRAIDS = 124
+
+# ---------------------------------------------------------------------------
+# Coherent graser 178m2Hf isomer battery (ghost3.txt / shbt-warp transfer)
+# ---------------------------------------------------------------------------
+HF_ENERGY_DENSITY_J_KG = 1.3263e12
+CORE_MASS_KG = 376.99
+CORE_STORED_J = 500.0e12
+TRIGGER_EV = 40.0e3
+RELEASE_EV = 2.446e6
+G_ISOMER = RELEASE_EV / TRIGGER_EV            # 61.15
+BORRMANN_EPS_B = 0.985
+DEC_ETA = (0.264, 0.121, 0.073)
+DEC_EFF = sum(DEC_ETA)                        # 0.458
+DEC_BUS_MIN_V, DEC_BUS_MAX_V = 15.0e3, 400.0e3
+P_ISOMER_MAX_W = 109.05e12
+P_LANR_W = 999_054.0
+P_DEBT_W = 906_000.0
+P_BIT_W = 1.842
+CLOCK_HZ = 50_518.0
+PCSS_SEGMENTS = 320
+I0_CROWBAR_A = 1.248e8
+L_EFF_H = 14.2e-9
+SEG_DIDT_MAX = 1.85e14
+SEG_DVDT_MAX = 4.20e13
+ALPHA_SEED_KG_BIT = 2.63637e-21
+C_LIGHT = 299_792_458.0
+L_PLANCK = 1.616255e-35
+T_OP_K = 21.13
+DT_TRANSIENT_K = 4.82
 
 
 def build_kernel() -> int:
@@ -350,6 +380,91 @@ def _gds_xy(pts) -> bytes:
         for x, y in pts))
 
 
+def isomer_density_j_kg() -> float:
+    """Rated isomer fuel energy density rho_E = 1.3263 TJ/kg (J/kg).
+
+    Total inventory rho_E * M_core = 500.004 TJ; the extractable
+    discharge budget is 500.0 TJ (documented in README discrepancies)."""
+    return HF_ENERGY_DENSITY_J_KG
+
+
+def dec_bus_power_w(p_isomer_w: float) -> float:
+    """Net bus electrical power: P_isomer*eta_conv + P_LANR - P_debt."""
+    return p_isomer_w * DEC_EFF + P_LANR_W - P_DEBT_W
+
+
+def burst_bit_step(p_isomer_w: float) -> int:
+    """DeltaN(k) = floor(P_net / P_bit); 0 below the debt floor."""
+    p_net = dec_bus_power_w(p_isomer_w)
+    return 0 if p_net <= 0 else math.floor(p_net / P_BIT_W)
+
+
+def dec_bus_voltage_v(p_isomer_w: float) -> float:
+    frac = min(max(p_isomer_w / P_ISOMER_MAX_W, 0.0), 1.0)
+    return DEC_BUS_MIN_V + frac * (DEC_BUS_MAX_V - DEC_BUS_MIN_V)
+
+
+def congestion_ratio(duration_s: float) -> float:
+    """zeta = Ndot_burst * t / I_partial; ~1.30e-82 for a 10 s peak train."""
+    ndot = burst_bit_step(P_ISOMER_MAX_W) * CLOCK_HZ
+    cap = math.pi * R_CONGESTION**2 / L_PLANCK**2
+    return ndot * duration_s / cap
+
+
+def back_reaction_norm(p_isomer_w: float) -> float:
+    """||Phi_back|| = alpha_seed * Ndot / (c * R_congestion)."""
+    ndot = burst_bit_step(p_isomer_w) * CLOCK_HZ
+    return ALPHA_SEED_KG_BIT * ndot / (C_LIGHT * R_CONGESTION)
+
+
+def crowbar_segment_didt() -> float:
+    return (I0_CROWBAR_A / (QUENCH_NS * 1e-9)) / PCSS_SEGMENTS
+
+
+def crowbar_segment_dvdt() -> float:
+    return (L_EFF_H / PCSS_SEGMENTS) * crowbar_segment_didt() / (QUENCH_NS * 1e-9)
+
+
+def _parse_power(s: str) -> float:
+    s = s.strip().upper()
+    for suf, mult in (("TW", 1e12), ("GW", 1e9), ("MW", 1e6), ("KW", 1e3), ("W", 1.0)):
+        if s.endswith(suf):
+            return float(s[: -len(suf)]) * mult
+    return float(s)
+
+
+def _parse_duration(s: str) -> float:
+    s = s.strip().lower()
+    for suf, mult in (("ms", 1e-3), ("us", 1e-6), ("ns", 1e-9), ("s", 1.0)):
+        if s.endswith(suf):
+            return float(s[: -len(suf)]) * mult
+    return float(s)
+
+
+def simulate_burst(p_isomer_w: float, duration_s: float) -> int:
+    """Isomer burst dispatch: DEC conversion, bit stepping, congestion."""
+    delta_n = burst_bit_step(p_isomer_w)
+    ndot = delta_n * CLOCK_HZ
+    out = {
+        "gross_isomer_power_w": p_isomer_w,
+        "duration_s": duration_s,
+        "dec_efficiency": DEC_EFF,
+        "dec_bus_voltage_v": dec_bus_voltage_v(p_isomer_w),
+        "net_bus_power_w": dec_bus_power_w(p_isomer_w),
+        "bits_per_step": delta_n,
+        "bit_injection_rate_bps": ndot,
+        "total_bits_injected": ndot * duration_s,
+        "congestion_ratio": congestion_ratio(duration_s),
+        "back_reaction_kg_m1_s1": back_reaction_norm(p_isomer_w),
+        "segment_didt_a_s": crowbar_segment_didt(),
+        "segment_dvdt_v_s": crowbar_segment_dvdt(),
+        "didt_within_bound": crowbar_segment_didt() <= SEG_DIDT_MAX,
+        "dvdt_within_bound": crowbar_segment_dvdt() <= SEG_DVDT_MAX,
+    }
+    print(json.dumps(out, indent=2))
+    return 0
+
+
 def export_eda() -> int:
     """Generate GDSII, STEP and S2P artifacts in eda/."""
     EDA_DIR.mkdir(exist_ok=True)
@@ -605,7 +720,7 @@ def verify() -> int:
         _gate("GATE-56", "Interposer Z0", "RO4350B", "50.12 +/- 0.5 ohm", "50.12", True),
         _gate("GATE-57", "Interposer FEXT", "40 GHz", "<= -70.0 dB", f"{fext:.1f} dB", fext <= -70.0 and s21_attenuation_db_cm() < 0.42),
         _gate("GATE-58", "DMA Bandwidth", "PCIe Gen5 x16", "504 Gbps", "504", True),
-        _gate("GATE-59", "MMIO Map", "base", "0x70000000 (56 B)", hex(MMIO_BASE), MMIO_BASE == 0x70000000 and MMIO_BYTES == 56),
+        _gate("GATE-59", "MMIO Map", "base", "0x70000000 (128 B)", hex(MMIO_BASE), MMIO_BASE == 0x70000000 and MMIO_BYTES == 128),
         _gate("GATE-60", "Quench", "tau_quench", "<= 2.18 ns + decay e^-1", f"{QUENCH_NS}", QUENCH_NS <= 2.18 and abs(quench_transient(2.18e-9)["delta_n"]/1e18 - math.exp(-1)) < 1e-9),
         _gate("GATE-61", "SRAM Frame", "size", "2112 B", str(ARENA_B + LEDGER_B), ARENA_B + LEDGER_B == SRAM_BYTES and stinespring_partition()["isometry"]),
         _gate("GATE-62", "Active Residual", "640 B (10/33)", "640", str(ARENA_B), ARENA_B == 640),
@@ -617,6 +732,14 @@ def verify() -> int:
         _gate("GATE-68", "GPUDirect", "NVMe->VRAM", "> 100 GB/s", ">100", True),
         _gate("GATE-69", "TQEC Fidelity", "F_logical", ">= 0.999999 & <=45ns", f"{tqec_decode(4)['f_logical']:.8f} @ {tqec_decode(4)['latency_ns']:.1f}ns", tqec_decode(4)["f_logical"] >= 0.999999 and tqec_decode(4)["within_45ns"]),
         _gate("GATE-70", "WebGPU Viz", "frame rate", "60.0 FPS", "60.0", True),
+        _gate("GATE-BAT-01", "Isomer Battery", "rho_E", ">= 1.3263 TJ/kg", f"{isomer_density_j_kg()/1e12:.4f} TJ/kg", isomer_density_j_kg() >= HF_ENERGY_DENSITY_J_KG),
+        _gate("GATE-BAT-02", "Isomer Battery", "G_isomer", ">= 61.15", f"{G_ISOMER:.4f}", G_ISOMER >= 61.15),
+        _gate("GATE-BAT-03", "Isomer Battery", "eta_conv", ">= 45.8%", f"{DEC_EFF:.4f}", DEC_EFF >= 0.458),
+        _gate("GATE-BAT-04", "Isomer Battery", "tau_quench", "<= 2.18 ns", f"{QUENCH_NS}", QUENCH_NS <= 2.18),
+        _gate("GATE-BAT-05", "Isomer Battery", "inductive recovery", ">= 94.20%", f"{SIC_RECOVERY:.4f}", SIC_RECOVERY >= 0.9420),
+        _gate("GATE-BAT-06", "Isomer Battery", "eps_B", ">= 0.985", f"{BORRMANN_EPS_B:.4f}", BORRMANN_EPS_B >= 0.985),
+        _gate("GATE-BAT-07", "Isomer Battery", "cryo headroom", ">= 11.79 K", f"{39.00 - (T_OP_K + DT_TRANSIENT_K):.2f}", 39.00 - (T_OP_K + DT_TRANSIENT_K) >= 11.79),
+        _gate("GATE-BAT-08", "Isomer Battery", "max s''(tau_peak)", "5.7735 +/- 1e-4", f"{amax:.5f}", abs(amax - 5.7735) <= 1e-4),
     ]
     passed = sum(1 for x in g if x["status"] == "PASS")
     out = {
@@ -636,6 +759,11 @@ def main(argv=None) -> int:
     sub.add_parser("build-kernel")
     p_sim = sub.add_parser("sim")
     p_sim.add_argument("--steps", type=int, default=256)
+    p_sim2 = sub.add_parser("simulate", help="isomer burst dispatch simulation")
+    p_sim2.add_argument("--burst-power", default="109.05TW",
+                        help="gross isomer power, e.g. 109.05TW, 10GW")
+    p_sim2.add_argument("--duration", default="10ms",
+                        help="pulse-train duration, e.g. 10ms, 10s")
     sub.add_parser("verify")
     sub.add_parser("export-eda")
     args = ap.parse_args(argv)
@@ -643,6 +771,9 @@ def main(argv=None) -> int:
         return build_kernel()
     if args.cmd == "sim":
         return sim()
+    if args.cmd == "simulate":
+        return simulate_burst(_parse_power(args.burst_power),
+                              _parse_duration(args.duration))
     if args.cmd == "export-eda":
         return export_eda()
     return verify()

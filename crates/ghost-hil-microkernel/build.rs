@@ -4,6 +4,7 @@ fn main() {
     let kernel_dir = PathBuf::from("../../kernel");
     println!("cargo:rerun-if-changed={}", kernel_dir.join("shbt_ghost_kernel.c").display());
     println!("cargo:rerun-if-changed={}", kernel_dir.join("include/shbt_hardware.h").display());
+    println!("cargo:rerun-if-changed={}", kernel_dir.join("include/shbt_ghost_mmio.h").display());
     cc::Build::new()
         .file(kernel_dir.join("shbt_ghost_kernel.c"))
         .include(&kernel_dir)

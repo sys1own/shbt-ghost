@@ -330,6 +330,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "ghost-audit"
+version = "0.1.0"
+dependencies = [
+ "ghost_lanr_interface",
+ "ghost_power_battery",
+ "ghost_propulsion_drive",
+]
+
+[[package]]
 name = "ghost_core_engine"
 version = "0.1.0"
 dependencies = [
@@ -381,10 +390,15 @@ name = "ghost_optics_lensing"
 version = "0.1.0"
 
 [[package]]
+name = "ghost_power_battery"
+version = "0.1.0"
+
+[[package]]
 name = "ghost_propulsion_drive"
 version = "0.1.0"
 dependencies = [
  "ghost_core_engine",
+ "ghost_power_battery",
  "glam 0.24.2",
  "rug",
 ]

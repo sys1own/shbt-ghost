@@ -11,6 +11,7 @@
  * bridge and the Python reference library without real hardware.
  */
 #include "include/shbt_hardware.h"
+#include "include/shbt_ghost_mmio.h"
 
 #ifdef SHBT_HOSTED_TEST
 static uint8_t g_mmio_shadow[SHBT_MMIO_BLOCK_BYTES];
@@ -167,4 +168,121 @@ void shbt_avx512_givens_remapping(double c, double s)
         lanes[2U * i]     = c * x + s * y;
         lanes[2U * i + 1U] = c * y - s * x;
     }
+}
+
+/* ------------------------------------------------------------------ */
+/* 128-byte dual-cacheline battery/metric MMIO contract                  */
+/* (shbt_ghost_mmio_t, ghost3.txt upgrade). In hosted-test builds the    */
+/* block is backed by a static shadow buffer; on hardware it is the      */
+/* volatile register window at 0x70000000. Zero dynamic allocation.      */
+/* ------------------------------------------------------------------ */
+#ifdef SHBT_HOSTED_TEST
+static shbt_ghost_mmio_t g_ghost_mmio;
+#define GHOST_MMIO (&g_ghost_mmio)
+#else
+#define GHOST_MMIO ((shbt_ghost_mmio_t *)SHBT_MMIO_BASE_ADDR)
+#endif
+
+#define GHOST_DEC_STANDBY_V   15000.0
+#define GHOST_QUENCH_LAT_PS   2180U    /* 2.18 ns crowbar latency        */
+#define GHOST_CORE_COLD_K     21.13f
+
+void shbt_ghost_mmio_init(void)
+{
+    shbt_ghost_mmio_t *m = GHOST_MMIO;
+    for (uint32_t i = 0; i < sizeof(*m); ++i) {
+        ((uint8_t *)m)[i] = 0;
+    }
+    m->ctrl_status        = SHBT_STATE_STANDBY_STASIS;
+    m->dec_bus_voltage_v  = GHOST_DEC_STANDBY_V;
+    m->core_temp_kelvin   = GHOST_CORE_COLD_K;
+    m->cold_plate_temp_k  = GHOST_CORE_COLD_K;
+    m->adm_lapse_alpha    = 1.0;
+    m->det_g_error        = 0.0;
+    m->shift_norm_beta    = 0.0;
+    m->tmsv_squeezing_r   = 2.50;
+    m->mu_comp_rigidity   = 0.0;
+    m->dark_ledger_braids = SHBT_FIBONACCI_BRAIDS;
+    m->quench_latency_ps  = 0;
+    m->ecc_syndrome_c0    = shbt_compute_secded_ecc(m->target_bits_step);
+    m->ecc_syndrome_c1    = shbt_compute_secded_ecc(0xFFFFFFFFFFFFFFFFULL);
+}
+
+/* Transition the five-phase battery dispatch state machine. Only legal
+ * phase progressions are accepted; an illegal request is a no-op. */
+void shbt_ghost_mmio_set_state(uint32_t state)
+{
+    shbt_ghost_mmio_t *m = GHOST_MMIO;
+    switch (state) {
+    case SHBT_STATE_STANDBY_STASIS:
+        m->ctrl_status       = SHBT_STATE_STANDBY_STASIS;
+        m->dec_bus_voltage_v = GHOST_DEC_STANDBY_V;
+        m->gross_burst_power_w = 0.0;
+        m->current_bits_step = 0;
+        break;
+    case SHBT_STATE_TRIGGER_ARMED:
+        if (m->ctrl_status == SHBT_STATE_STANDBY_STASIS) {
+            m->ctrl_status      = SHBT_STATE_TRIGGER_ARMED;
+            m->pcss_crowbar_arm = 1U;
+        }
+        break;
+    case SHBT_STATE_BURST_TRACTION:
+        if (m->ctrl_status == SHBT_STATE_TRIGGER_ARMED) {
+            m->ctrl_status = SHBT_STATE_BURST_TRACTION;
+        }
+        break;
+    case SHBT_STATE_DEC_COOLDOWN:
+        if (m->ctrl_status == SHBT_STATE_BURST_TRACTION) {
+            m->ctrl_status         = SHBT_STATE_DEC_COOLDOWN;
+            m->gross_burst_power_w = 0.0;
+        }
+        break;
+    case SHBT_STATE_EMERGENCY_QUENCH:
+        m->ctrl_status        = SHBT_STATE_EMERGENCY_QUENCH;
+        m->gross_burst_power_w = 0.0;
+        m->dec_bus_voltage_v  = 0.0;
+        m->quench_latency_ps  = GHOST_QUENCH_LAT_PS;
+        m->pcss_crowbar_arm   = 0U;
+        shbt_trigger_quench_interlock();
+        break;
+    default:
+        break;
+    }
+    m->ecc_syndrome_c0 = shbt_compute_secded_ecc(
+        ((uint64_t)m->ctrl_status << 32) | m->pcss_crowbar_arm);
+    union { double d; uint64_t u; } lapse = { .d = (double)m->adm_lapse_alpha };
+    m->ecc_syndrome_c1 = shbt_compute_secded_ecc(lapse.u);
+}
+
+/* Burst-telemetry write: commanded/actual bit stepping, DEC bus voltage,
+ * gross graser power, and cryo temperatures. */
+void shbt_ghost_mmio_burst_telemetry(uint64_t target_bits, uint64_t actual_bits,
+                                     double dec_v, double gross_w,
+                                     float core_k, float plate_k, uint16_t soc)
+{
+    shbt_ghost_mmio_t *m = GHOST_MMIO;
+    m->target_bits_step      = target_bits;
+    m->current_bits_step     = actual_bits;
+    m->dec_bus_voltage_v     = dec_v;
+    m->gross_burst_power_w   = gross_w;
+    m->core_temp_kelvin      = core_k;
+    m->cold_plate_temp_k     = plate_k;
+    m->battery_soc_permille  = soc;
+    m->ecc_syndrome_c0       = shbt_compute_secded_ecc(target_bits ^ actual_bits);
+}
+
+uint32_t shbt_ghost_mmio_state(void)
+{
+    return GHOST_MMIO->ctrl_status;
+}
+
+uint32_t shbt_ghost_mmio_quench_latency_ps(void)
+{
+    return GHOST_MMIO->quench_latency_ps;
+}
+
+/* Read-only snapshot for FFI callers. */
+const volatile shbt_ghost_mmio_t *shbt_ghost_mmio_block(void)
+{
+    return GHOST_MMIO;
 }

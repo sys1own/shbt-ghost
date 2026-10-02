@@ -11,3 +11,4 @@ path = "src/lib.rs"
 glam = { workspace = true }
 rug = { workspace = true }
 ghost_core_engine = { path = "../ghost-core-engine" }
+ghost_power_battery = { path = "../ghost-power-battery" }
