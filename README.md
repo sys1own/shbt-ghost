@@ -1,4 +1,4 @@
-# Static Holographic Boundary Theory (SHBT) — Synthetic Ghost Seed Propulsion, Dual-Power Isomer Battery, and Metric Control Digital Twin
+# Static Holographic Boundary Theory (SHBT) — Synthetic Ghost Seed Propulsion & Metric Control Digital Twin
 
 Multi-physics digital twin simulator for synthetic **ghost seed** propulsion, multi-seed artificial gravity, and gravitational optics under Static Holographic Boundary Theory (SHBT), now integrating a **coherent graser-discharged <sup>178m2</sup>Hf nuclear isomer power supply** transferred from `sys1own/shbt-warp` and `sys1own/shbt-power`.
 
@@ -157,6 +157,53 @@ Static assertions pin `sizeof(shbt_ghost_mmio_t) == 128` and `offsetof(..., adm_
 ## SHBT Ecosystem Repository Architecture & Crosswalk
 
 `shbt-ghost` operates as the multi-seed gravity, propulsion, and fast metric-stabilization authority within the Static Holographic Boundary Theory (SHBT) digital twin network. The ecosystem establishes formal bidirectional technology transfers across nine specialized repositories:
+
+```
+                              [shbt-precision]
+                       Computational Math & Cosmology
+                       (512-bit MPFR / WZW Characters)
+                                     │
+    ┌────────────────────────────────┼───────────────────────────────┐
+    ▼                                ▼                               ▼
+[shbt-power]                     [shbt-cf]                       [shbt-qc]
+Commercial Fusion Grid         1,800-Module LANR Array         Bare-Metal Microkernel &
+(8,750 MW p-11B Twin)          & Thermal-Hydraulics            Photonic Quantum Bus
+│                                │                               │
+└────────────────────────┬───────┴───────────────────────────────┘
+▼
+┌────────────────────────────────────────────────────────────────┐
+│                  SPECIALIZED VEHICLE TWINS                     │
+│  • shbt-ghost : Reactionless Propulsion & Local Gravity Wells  │
+│  • shbt-recon : Macroscopic State Translocation Gateway        │
+│  • shbt-sglt  : Synthetic Gravitational Lensing Telescope      │
+│  • shbt-warp  : Holographic Warp Metric & 3+1D Flight Twin     │
+└────────────────────────┬───────────────────────────────────────┘
+│
+▼
+┌──────────────────────────────────────────────────────────────────────────┐
+│                               shbt-exotic                                │
+│        MULTI-PROTOCOL SPACETIME ENGINEERING CO-SIMULATION BENCH          │
+│  • Cross-Protocol Field Coupling (Warp + Stasis + Translocation + Wells) │
+│  • Global Energy Condition & Ford-Roman Quantum Inequality Auditing      │
+│  • Dynamic 5-Stage Multi-Technology Flight Director                      │
+└──────────────────────────────────────────────────────────────────────────┘
+```
+
+### Standardized 9-Pillar Ecosystem Crosswalk Table
+
+| Repository | Domain Role & Platform Scope | Shared Invariants & Interface Contracts |
+| :--- | :--- | :--- |
+| [`shbt-precision`](https://github.com/sys1own/shbt-precision) | Computational Math & Cosmological Foundation Core | 512-bit MPFR numerics, canonical WZW (26, 8, 312), Δ<sub>fr</sub> ≡ 0, Landauer debt P<sub>debt</sub> = 906.00 kW. |
+| [`shbt-power`](https://github.com/sys1own/shbt-power) | Commercial p-¹¹B Aneutronic Fusion Power Plant Twin | 8,750 MW fusion / 7,832.903 MW net export, 70-gate audit, closed-loop thermal ledger, 128-byte SHBT-MMIO-POWER. |
+| [`shbt-cf`](https://github.com/sys1own/shbt-cf) | LANR Cold Fusion Reactor Workbench & Thermal-Hydraulics | 1,800-module LANR starter grid (999.054 kW net DC), dual-stage CoSb<sub>3</sub>/ZrNiSn TEG, Kapitza resistance ΔT<sub>K</sub> = 3.546 K. |
+| [`shbt-qc`](https://github.com/sys1own/shbt-qc) | Photonic Quantum Computer Twin & C11 Microkernel | Bare-metal C11 shbt-os microkernel, base 56-byte SHBT-MMIO-1 at 0x70000000, SECDED Hamming(72,64) ECC, AVX-512 interlocks. |
+| [`shbt-ghost`](https://github.com/sys1own/shbt-ghost) | Ghost Seed Reactionless Propulsion & Metric Stabilization | Sub-2.5 ns PCSS crowbars, 94.20% SiC inductive recovery, 3+1 CCZ4/ADM stabilization (β<sup>i</sup> → 0, \|det(g)+1\| ≤ 10<sup>-12</sup>). |
+| [`shbt-recon`](https://github.com/sys1own/shbt-recon) | Macroscopic State Translocation & Gateway Twin | Macroscopic Stinespring dilation (V<sub>unified</sub><sup>macro</sup>), dark ledger η<sub>D</sub> = 23/33, 128-byte C-ABI DMA streaming, 78-gate audit. |
+| [`shbt-sglt`](https://github.com/sys1own/shbt-sglt) | Synthetic Gravitational Lensing Telescope (SE-L2) Stack | 2PN relativistic beam optics, TMSV heterodyne metrology (r = 2.50, 21.715 dB), 5th-order minimum-jerk flight profiles. |
+| [`shbt-exotic`](https://github.com/sys1own/shbt-exotic) | Multi-Protocol Spacetime Engineering Co-Simulation | Cross-protocol metric coupling (all 6 phenomena), Ford-Roman QI dark-ledger auditing, Heegaard-Floer boundary relabeling. |
+| [`shbt-warp`](https://github.com/sys1own/shbt-warp) | Holographic Warp Drive Digital Twin & 3+1D ADM Engine | Alcubierre metric foliation (α = 1.0, γ<sub>ij</sub> = δ<sub>ij</sub>), 500 TJ ¹⁷⁸ᵐ²Hf graser battery (109 TW burst), 128-gate audit, 8 Z3 proofs. |
+
+The following table details the bidirectional technology-transfer contracts between `shbt-ghost` and each ecosystem peer:
 
 | Repository | Domain Role | Inter-Repository Integration with `shbt-ghost` |
 | :--- | :--- | :--- |
