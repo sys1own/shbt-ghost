@@ -165,21 +165,21 @@ Static assertions pin `sizeof(shbt_ghost_mmio_t) == 128` and `offsetof(..., adm_
                                      │
     ┌────────────────────────────────┼───────────────────────────────┐
     ▼                                ▼                               ▼
-[shbt-power]                     [shbt-cf]                       [shbt-qc]
-Commercial Fusion Grid         1,800-Module LANR Array         Bare-Metal Microkernel &
-(8,750 MW p-11B Twin)          & Thermal-Hydraulics            Photonic Quantum Bus
-│                                │                               │
-└────────────────────────┬───────┴───────────────────────────────┘
-▼
-┌────────────────────────────────────────────────────────────────┐
-│                  SPECIALIZED VEHICLE TWINS                     │
-│  • shbt-ghost : Reactionless Propulsion & Local Gravity Wells  │
-│  • shbt-recon : Macroscopic State Translocation Gateway        │
-│  • shbt-sglt  : Synthetic Gravitational Lensing Telescope      │
-│  • shbt-warp  : Holographic Warp Metric & 3+1D Flight Twin     │
-└────────────────────────┬───────────────────────────────────────┘
-│
-▼
+ [shbt-power]                     [shbt-cf]                       [shbt-qc]
+ Commercial Fusion Grid         1,800-Module LANR Array         Bare-Metal Microkernel &
+ (8,750 MW p-11B Twin)          & Thermal-Hydraulics            Photonic Quantum Bus
+    │                                │                               │
+    └────────────────────────┬───────┴───────────────────────────────┘
+                             ▼
+  ┌────────────────────────────────────────────────────────────────┐  
+  │                  SPECIALIZED VEHICLE TWINS                     │  
+  │  • shbt-ghost : Reactionless Propulsion & Local Gravity Wells  │
+  │  • shbt-recon : Macroscopic State Translocation Gateway        │
+  │  • shbt-sglt  : Synthetic Gravitational Lensing Telescope      │
+  │  • shbt-warp  : Holographic Warp Metric & 3+1D Flight Twin     │
+  └────────────────────────┬───────────────────────────────────────┘
+                           │
+                           ▼
 ┌──────────────────────────────────────────────────────────────────────────┐
 │                               shbt-exotic                                │
 │        MULTI-PROTOCOL SPACETIME ENGINEERING CO-SIMULATION BENCH          │
