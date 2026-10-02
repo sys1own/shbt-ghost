@@ -7,3 +7,10 @@ __pycache__/
 *.out
 *.bib
 ghostNotes.bib
+main.fdb_latexmk
+main.fls
+main.pdf
+main.bbl
+main.blg
+mainNotes.bib
+test_c_abi

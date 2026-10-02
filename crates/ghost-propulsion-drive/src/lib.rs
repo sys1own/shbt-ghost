@@ -212,6 +212,51 @@ impl Default for PowerAwareBitAllocation {
     }
 }
 
+// ---------------------------------------------------------------------------
+// Dual-power burst traction (ghost3.txt / shbt-warp isomer battery transfer)
+// ---------------------------------------------------------------------------
+
+use ghost_power_battery as bat;
+
+/// Dynamic bit-stepping under isomer burst dispatch:
+/// `DeltaN(k) = floor(P_net(k) / P_bit)` where
+/// `P_net = P_isomer * eta_conv + P_LANR - P_debt - P_aux`.
+///
+/// Scales from the 50,517 bits/step LANR baseline up to
+/// 2.7114e13 bits/step at the 109.05 TW peak burst, always gated by the
+/// non-sheddable Landauer debt floor.
+pub fn burst_bit_step(p_isomer_w: f64) -> u64 {
+    bat::bit_step_delta_n(bat::net_bus_power_w(p_isomer_w))
+}
+
+/// Peak-burst electrical power delivered to the emitter microcavities (W):
+/// 49.9449 TW net at the 109.05 TW isomer burst rating.
+pub fn peak_burst_net_w() -> f64 {
+    bat::net_bus_power_w(bat::P_ISOMER_MAX_W)
+}
+
+/// Peak normalized jerk-transition point of the 5th-order minimum-jerk
+/// profile, `tau_peak = (3 - sqrt(3)) / 6 ~= 0.21132`.
+pub fn min_jerk_tau_peak() -> f64 {
+    (3.0 - 3.0f64.sqrt()) / 6.0
+}
+
+/// Maximum normalized acceleration `s''(tau_peak) = 5.7735`.
+pub fn min_jerk_max_accel() -> f64 {
+    compute_minimum_jerk_profile(min_jerk_tau_peak()).acceleration.abs()
+}
+
+/// Holographic congestion saturation ratio for a `duration_s` pulse train
+/// at the peak 109.05 TW burst (`zeta ~= 1.30e-82 << 1`).
+pub fn congestion_saturation(duration_s: f64) -> f64 {
+    bat::congestion_ratio(duration_s)
+}
+
+/// Boundary back-reaction norm `||Phi_back||` at burst power (kg·m^-1·s^-1).
+pub fn boundary_back_reaction(p_isomer_w: f64) -> f64 {
+    bat::back_reaction_norm(p_isomer_w)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -267,5 +312,17 @@ mod tests {
         // Surplus breached -> telemetry throttles to zero.
         assert_eq!(alloc.allocate_telemetry_bits(999_054.0, 900_000.0, 6_001.0, 1_000.0), 0);
         assert!(PowerAwareBitAllocation::tracking_residual_nm(5e-11) <= RANGE_ERROR_3SIGMA_NM);
+    }
+
+    #[test]
+    fn burst_traction_stepping() {
+        assert_eq!(burst_bit_step(0.0), 50_517);
+        let peak = burst_bit_step(109.05e12);
+        assert!((peak as f64 - 2.7114e13).abs() / 2.7114e13 < 1e-3);
+        assert!((peak_burst_net_w() - 49.9449e12).abs() / 49.9449e12 < 1e-3);
+        assert!((min_jerk_tau_peak() - 0.21132).abs() < 1e-4);
+        assert!((min_jerk_max_accel() - 5.7735).abs() < 1e-4);
+        assert!(congestion_saturation(10.0) < 1e-70);
+        assert!((boundary_back_reaction(109.05e12) - 4.07e-27).abs() / 4.07e-27 < 0.1);
     }
 }

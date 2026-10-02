@@ -6,8 +6,11 @@
 
 /// Physical MMIO base of the SHBT-MMIO-1 register block.
 pub const MMIO_BASE: u64 = 0x7000_0000;
-/// Register block size in bytes.
+/// Register block size in bytes (legacy SHBT-MMIO-1 window).
 pub const MMIO_BYTES: usize = 56;
+/// Upgraded 128-byte dual-cacheline battery/metric contract
+/// (`shbt_ghost_mmio_t`, ghost3.txt).
+pub const MMIO_GHOST_BYTES: usize = 128;
 /// UnifiedStinespringFrame size (bytes).
 pub const SRAM_FRAME_BYTES: usize = 2112;
 /// Active residual arena (bytes, eta_A = 10/33).
@@ -51,6 +54,44 @@ extern "C" {
     fn shbt_trigger_quench_interlock();
     fn shbt_sys_status() -> u32;
     fn shbt_avx512_givens_remapping(c: f64, s: f64);
+    fn shbt_ghost_mmio_init();
+    fn shbt_ghost_mmio_set_state(state: u32);
+    fn shbt_ghost_mmio_state() -> u32;
+    fn shbt_ghost_mmio_quench_latency_ps() -> u32;
+}
+
+/// Five-phase battery dispatch state codes (`shbt_power_state_t`).
+pub mod power_state {
+    /// 0x01 — LANR only; Landauer debt satisfied; core cold.
+    pub const STANDBY_STASIS: u32 = 0x01;
+    /// 0x02 — 40.0 keV seed synch locked; crowbars armed.
+    pub const TRIGGER_ARMED: u32 = 0x02;
+    /// 0x04 — graser discharge active; DEC 15 -> 400 kV.
+    pub const BURST_TRACTION: u32 = 0x04;
+    /// 0x08 — seed off; bus stepping down; He flush.
+    pub const DEC_COOLDOWN: u32 = 0x08;
+    /// 0x10 — crowbar fired; SMES capture; drop to stasis.
+    pub const EMERGENCY_QUENCH: u32 = 0x10;
+}
+
+/// Initialize the 128-byte dual-cacheline battery/metric MMIO block.
+pub fn ghost_mmio_init() {
+    unsafe { shbt_ghost_mmio_init() }
+}
+
+/// Transition the battery dispatch state machine.
+pub fn ghost_mmio_set_state(state: u32) {
+    unsafe { shbt_ghost_mmio_set_state(state) }
+}
+
+/// Current dispatch phase code.
+pub fn ghost_mmio_state() -> u32 {
+    unsafe { shbt_ghost_mmio_state() }
+}
+
+/// Recorded crowbar quench latency (ps).
+pub fn ghost_mmio_quench_latency_ps() -> u32 {
+    unsafe { shbt_ghost_mmio_quench_latency_ps() }
 }
 
 /// Initialize the kernel: clear the MMIO control/status block and zero the

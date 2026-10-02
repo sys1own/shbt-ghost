@@ -1,0 +1,10 @@
+[package]
+name = "ghost_power_battery"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "ghost_power_battery"
+path = "src/lib.rs"
+
+[dependencies]

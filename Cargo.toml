@@ -12,6 +12,8 @@ members = [
     "crates/ghost-tqec-dark-ledger",
     "crates/ghost-uncertainty-uq",
     "crates/ghost-eda-exporters",
+    "crates/ghost-power-battery",
+    "crates/ghost-audit",
 ]
 
 [workspace.dependencies]
