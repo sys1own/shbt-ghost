@@ -1,6 +1,6 @@
 # Static Holographic Boundary Theory (SHBT) — Synthetic Ghost Seed Propulsion, Dual-Power Isomer Battery, and Metric Control Digital Twin
 
-Multi-physics digital twin simulator for synthetic **ghost seed** propulsion, multi-seed artificial gravity, and gravitational optics under Static Holographic Boundary Theory (SHBT), now integrating a **coherent graser-discharged <sup>178m2</sup>Hf nuclear isomer power supply** (ghost3.txt specification) transferred from `sys1own/shbt-warp` and `sys1own/shbt-power`.
+Multi-physics digital twin simulator for synthetic **ghost seed** propulsion, multi-seed artificial gravity, and gravitational optics under Static Holographic Boundary Theory (SHBT), now integrating a **coherent graser-discharged <sup>178m2</sup>Hf nuclear isomer power supply** transferred from `sys1own/shbt-warp` and `sys1own/shbt-power`.
 
 ## System Physics
 
