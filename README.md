@@ -211,7 +211,6 @@ Static assertions pin `sizeof(shbt_ghost_mmio_t) == 128` and `offsetof(..., adm_
 
 `shbt-ghost` operates as the multi-seed gravity, propulsion, and fast metric-stabilization authority within the Static Holographic Boundary Theory (SHBT) digital twin network. The ecosystem establishes formal bidirectional technology transfers across nine specialized repositories:
 
-                                  ```text
                                   +------------------------------------------+
                                   |             [shbt-precision]             |
                                   |      Computational Math & Cosmology      |
@@ -253,7 +252,6 @@ Static assertions pin `sizeof(shbt_ghost_mmio_t) == 128` and `offsetof(..., adm_
                                        |  Universal Matter Foundry &   |
                                        |   5th-Gen SHBT-MAR-312X Twin  |
                                        +-------------------------------+
-```
                                                        │
                      ┌─────────────────────────────────┼─────────────────────────────────┐
                      ▼                                 ▼                                 ▼
@@ -265,14 +263,14 @@ Static assertions pin `sizeof(shbt_ghost_mmio_t) == 128` and `offsetof(..., adm_
                      │                                 │                                 │
                      └────────────────────────┬────────┴─────────────────────────────────┘
                                               ▼
-       ╭───────────────────────────────────────────────────────────────────────────────────────────╮
-       │                                SPECIALIZED VEHICLE TWINS                                  │
-       │                                                                                           │
-       │  • shbt-ghost : Reactionless Propulsion & Local Gravity Wells (3+1 CCZ4 / PCSS Crowbars)  │
-       │  • shbt-recon : Macroscopic State Translocation Gateway (Stinespring V_macro / 504 Gbps)  │
-       │  • shbt-sglt  : Synthetic Gravitational Lensing Telescope (SE-L2 Swarm / TMSV Metrology)  │
-       │  • shbt-warp  : Holographic Warp Metric & 3+1D Flight Twin (ADM α=1.0 / SHBT-MAR-312X Engine)    │
-       ╰──────────────────────────────────────────┬────────────────────────────────────────────────╯
+       ╭──────────────────────────────────────────────────────────────────────────────────────────────╮
+       │                                SPECIALIZED VEHICLE TWINS                                     │
+       │                                                                                              │
+       │  • shbt-ghost : Reactionless Propulsion & Local Gravity Wells (3+1 CCZ4 / PCSS Crowbars)     │
+       │  • shbt-recon : Macroscopic State Translocation Gateway (Stinespring V_macro / 504 Gbps)     │
+       │  • shbt-sglt  : Synthetic Gravitational Lensing Telescope (SE-L2 Swarm / TMSV Metrology)     │
+       │  • shbt-warp  : Holographic Warp Metric & 3+1D Flight Twin (ADM α=1.0 / SHBT-MAR-312X Engine)│
+       ╰──────────────────────────────────────────┬───────────────────────────────────────────────────╯
                                                   │
                                                   ▼
        ╭───────────────────────────────────────────────────────────────────────────────────────────╮
