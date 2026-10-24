@@ -29,9 +29,7 @@ Power is supplied by a 1,800-module LANR plant delivering `999.054 kW_net` (`555
 
 The LANR continuous tier resolves the irreducible Landauer floor but bounds discrete bit-stepping to `50,517 bits/step`. To break the thrust-to-weight bottleneck, a **dual-power dispatch topology** couples the LANR grid to a pulsed <sup>178m2</sup>Hf graser isomer battery:
 
-$$
-P_{\mathrm{net}}(k) = P_{\mathrm{isomer}}(k)\,\eta_{\mathrm{conv}} + P_{\mathrm{LANR}} - P_{\mathrm{debt}} - P_{\mathrm{aux}}
-$$
+`P_net(k) = P_isomer(k) · η_conv + P_LANR − P_debt − P_aux`
 
 - **Isomer core:** 376.99 kg monolithic single-crystal <sup>178m2</sup>HfB<sub>2</sub> (ρ_E = 1.3263 TJ/kg, E_x = 2.446 MeV, t½ = 31.0 y, K^π = 16⁺, K-forbiddenness ν = 8) storing 500.0 TJ extractable.
 - **Resonant gateway trigger:** 40.0 keV coherent X-ray seed excites the 2.486 MeV gateway state (K^π = 8⁻, ν = 0) giving single-event gain G_isomer = 61.15.
@@ -209,15 +207,53 @@ The battery/metric hardware window `shbt_ghost_mmio_t` (`kernel/include/shbt_gho
 
 Static assertions pin `sizeof(shbt_ghost_mmio_t) == 128` and `offsetof(..., adm_lapse_alpha) == 64`; the real-time loop performs zero dynamic heap allocation.
 
-## SHBT Ecosystem Repository Architecture & Crosswalk
+## 10-Repository SHBT Ecosystem Topology & Crosswalk
 
 `shbt-ghost` operates as the multi-seed gravity, propulsion, and fast metric-stabilization authority within the Static Holographic Boundary Theory (SHBT) digital twin network. The ecosystem establishes formal bidirectional technology transfers across nine specialized repositories:
 
-                                  ╭──────────────────────────────────────────╮
-                                  │             [shbt-precision]             │
-                                  │      Computational Math & Cosmology      │
-                                  │     (512-bit MPFR / WZW Characters)      │
-                                  ╰────────────────────┬─────────────────────╯
+                                  ```text
+                                  +------------------------------------------+
+                                  |             [shbt-precision]             |
+                                  |      Computational Math & Cosmology      |
+                                  |     (512-bit MPFR / WZW Characters)      |
+                                  +--------------------+---------------------+
+                                                       |
+                     +---------------------------------+---------------------------------+
+                     v                                 v                                 v
+       +---------------------------+     +---------------------------+     +---------------------------+
+       |       [shbt-power]        |     |         [shbt-cf]         |     |         [shbt-qc]         |
+       |  Commercial Fusion Grid   |     |  1,800-Module LANR Array  |     | Bare-Metal Microkernel &  |
+       |   (8,750 MW p-11B Twin)   |     |    & Thermal-Hydraulics   |     |   Photonic Quantum Bus    |
+       +-------------+-------------+     +-------------+-------------+     +-------------+-------------+
+                     |                                 |                                 |
+                     +---------------------------------+---------------------------------+
+                                                       |
+                     +---------------------------------+---------------------------------+
+                     v                                 v                                 v
+       +---------------------------+     +---------------------------+     +---------------------------+
+       |       [shbt-ghost]        |     |        [shbt-sglt]        |     |        [shbt-exotic]      |
+       | Ghost Seed Propulsion &   |     | Synthetic Gravitational   |     | Multi-Protocol Spacetime  |
+       |  Metric Interlocks (CCZ4) |     |  Lensing Telescope Stack  |     |  Co-Simulation & QI Audit |
+       +-------------+-------------+     +-------------+-------------+     +-------------+-------------+
+                     |                                 |                                 |
+                     +---------------------------------+---------------------------------+
+                                                       |
+                               +-----------------------+-----------------------+
+                               v                                               v
+               +-------------------------------+               +-------------------------------+
+               |          [shbt-recon]         |               |          [shbt-warp]          |
+               |  Macro State Translocation &  |<=============>|   Holographic Warp Drive &    |
+               |  Bipartite Fuel Foundry Twin  |  Dual-Gateway |    3+1D ADM Metric Engine     |
+               |  (V_unified^macro / MAR-312C) |    Corridor   |  (Alcubierre / SHBT-MAR-312C) |
+               +---------------+---------------+               +---------------+---------------+
+                               ^                                               ^
+                               |       +-------------------------------+       |
+                               |       |          [shbt-swarm]         |       |
+                               +=======|  Autonomous Von Neumann Swarm |=======+
+                                       |  Universal Matter Foundry &   |
+                                       |   5th-Gen SHBT-MAR-312X Twin  |
+                                       +-------------------------------+
+```
                                                        │
                      ┌─────────────────────────────────┼─────────────────────────────────┐
                      ▼                                 ▼                                 ▼
@@ -235,7 +271,7 @@ Static assertions pin `sizeof(shbt_ghost_mmio_t) == 128` and `offsetof(..., adm_
        │  • shbt-ghost : Reactionless Propulsion & Local Gravity Wells (3+1 CCZ4 / PCSS Crowbars)  │
        │  • shbt-recon : Macroscopic State Translocation Gateway (Stinespring V_macro / 504 Gbps)  │
        │  • shbt-sglt  : Synthetic Gravitational Lensing Telescope (SE-L2 Swarm / TMSV Metrology)  │
-       │  • shbt-warp  : Holographic Warp Metric & 3+1D Flight Twin (ADM α=1.0 / 500 TJ Graser)    │
+       │  • shbt-warp  : Holographic Warp Metric & 3+1D Flight Twin (ADM α=1.0 / SHBT-MAR-312X Engine)    │
        ╰──────────────────────────────────────────┬────────────────────────────────────────────────╯
                                                   │
                                                   ▼
@@ -248,33 +284,29 @@ Static assertions pin `sizeof(shbt_ghost_mmio_t) == 128` and `offsetof(..., adm_
        │  • Dynamic 5-Stage Multi-Technology Flight Director & Relativistic PDE Mesh Solvers       │
        ╰───────────────────────────────────────────────────────────────────────────────────────────╯
 
-### Standardized 9-Pillar Ecosystem Crosswalk Table
+### Standardized 10-Repository Ecosystem Crosswalk Table
 
 | Repository | Domain Role & Platform Scope | Shared Invariants & Interface Contracts |
 | :--- | :--- | :--- |
-| [`shbt-precision`](https://github.com/sys1own/shbt-precision) | Computational Math & Cosmological Foundation Core | 512-bit MPFR numerics, canonical WZW (26, 8, 312), Δ<sub>fr</sub> ≡ 0, Landauer debt P<sub>debt</sub> = 906.00 kW. |
-| [`shbt-power`](https://github.com/sys1own/shbt-power) | Commercial p-¹¹B Aneutronic Fusion Power Plant Twin | 8,750 MW fusion / 7,832.903 MW net export, 70-gate audit, closed-loop thermal ledger, 128-byte SHBT-MMIO-POWER. |
-| [`shbt-cf`](https://github.com/sys1own/shbt-cf) | LANR Cold Fusion Reactor Workbench & Thermal-Hydraulics | 1,800-module LANR starter grid (999.054 kW net DC), dual-stage CoSb<sub>3</sub>/ZrNiSn TEG, Kapitza resistance ΔT<sub>K</sub> = 3.546 K. |
-| [`shbt-qc`](https://github.com/sys1own/shbt-qc) | Photonic Quantum Computer Twin & C11 Microkernel | Bare-metal C11 shbt-os microkernel, base 56-byte SHBT-MMIO-1 at 0x70000000, SECDED Hamming(72,64) ECC, AVX-512 interlocks. |
-| [`shbt-ghost`](https://github.com/sys1own/shbt-ghost) | Ghost Seed Reactionless Propulsion & Metric Stabilization | Sub-2.5 ns PCSS crowbars, 94.20% SiC inductive recovery, 3+1 CCZ4/ADM stabilization (β<sup>i</sup> → 0, \|det(g)+1\| ≤ 10<sup>-12</sup>). |
-| [`shbt-recon`](https://github.com/sys1own/shbt-recon) | Macroscopic State Translocation & Gateway Twin | Macroscopic Stinespring dilation (V<sub>unified</sub><sup>macro</sup>), dark ledger η<sub>D</sub> = 23/33, 128-byte C-ABI DMA streaming, 78-gate audit. |
-| [`shbt-sglt`](https://github.com/sys1own/shbt-sglt) | Synthetic Gravitational Lensing Telescope (SE-L2) Stack | 2PN relativistic beam optics, TMSV heterodyne metrology (r = 2.50, 21.715 dB), 5th-order minimum-jerk flight profiles. |
-| [`shbt-exotic`](https://github.com/sys1own/shbt-exotic) | Multi-Protocol Spacetime Engineering Co-Simulation | Cross-protocol metric coupling (all 6 phenomena), Ford-Roman QI dark-ledger auditing, Heegaard-Floer boundary relabeling. |
-| [`shbt-warp`](https://github.com/sys1own/shbt-warp) | Holographic Warp Drive Digital Twin & 3+1D ADM Engine | Alcubierre metric foliation (α = 1.0, γ<sub>ij</sub> = δ<sub>ij</sub>), 500 TJ ¹⁷⁸ᵐ²Hf graser battery (109 TW burst), 128-gate audit, 8 Z3 proofs. |
+| [`shbt-precision`](https://github.com/sys1own/shbt-precision) | Computational Math & Cosmological Foundation Core | 512-bit MPFR arbitrary-precision arithmetic (`rug`), WZW affine levels `(26, 8, 312)`, 346 Dynkin slots, Callan–Symanzik RG thresholds, exact Casimir denominators `(28, 22, 640)`, framing defect `Δ_fr ≡ 0`, Landauer debt schedule `P_debt = 906.00 kW`, 15-gate audit / 15 Z3 SMT proofs. |
+| [`shbt-qc`](https://github.com/sys1own/shbt-qc) | Photonic Quantum Computer Twin & C11 Microkernel | Freestanding C11 `shbt-os` microkernel, SHBT-R photonic processor architecture, 52-hexamer InP/InGaAsP microcavities (3-stage polariton squeezing cascade), non-Hermitian PT-symmetric Geometry of Interaction (GoI) optical matrix engine (`t_prop = 1.701 ps`), Tomita–Takesaki inverse modular automorphism flow `σ_{-t}^Ψ` (`Q_internal = 0 J/bit`), 128-byte `SHBT-MMIO-2` at `0x70000000`, SECDED `Hamming(72,64)` ECC syndromes, 50-gate verification matrix (V-01..V-50), 10 Z3 SMT proofs. |
+| [`shbt-power`](https://github.com/sys1own/shbt-power) | Commercial p-¹¹B Aneutronic Fusion Power Plant Twin | Multi-gigawatt p-¹¹B aneutronic fusion power generation (8,750 MW fusion / 7,832.903 MW net export), 128-byte `SHBT-MMIO-POWER`, 906.00 kW Landauer debt schedule, closed-loop thermal ledger, 78-gate verification audit (78/78 PASS) + 84-EXT checks, 16 Z3 proofs. |
+| [`shbt-cf`](https://github.com/sys1own/shbt-cf) | LANR Cold Fusion Reactor Workbench & Thermal-Hydraulics | 1,800-module LANR starter grid (555.03 W net/cell, 999.054 kW net DC array @ 400 V), dynamic Floquet–Adler–Wiser dielectric screening (`U_eff = 352.48 eV`), dual-stage CoSb₃/ZrNiSn TEG enthalpy recovery, Kapitza resistance `ΔT_K = 3.546 K`, 3D Eulerian-Eulerian helium thermal-hydraulics, 50-gate verification matrix (`GATE-01`–`GATE-50`). |
+| [`shbt-ghost`](https://github.com/sys1own/shbt-ghost) | Ghost Seed Reactionless Propulsion & Metric Stabilization | 3+1D CCZ4 numerical relativity with Gundlach damping (`κ₁ = 0.15, κ₂ = 0.0`), ADM metric stabilization (`β^i → 0, ||det(g)+1|| ≤ 10⁻¹²`), sub-2.5 ns PCSS GaN/4H-SiC optical crowbar circuits, 94.20% SiC inductive recovery shunts, 312-channel reactionless artificial gravity generation (1.000g habitability floors, zero-Coriolis metric screening `E_μν ≡ 0`), stand-off Bondi–Hoyle mass harvesting, 78-gate verification audit (`GATE-BAT-01..08`), 12 Z3 proofs. |
+| [`shbt-recon`](https://github.com/sys1own/shbt-recon) | Macroscopic State Translocation & Bipartite Fuel Foundry Twin | Macroscopic Stinespring dilation (`V_unified^macro`), 101-layer Adaptive TTN-MERA, topological dark ledger (`η_D = 23/33`, 124 Fibonacci braids), bipartite coset fuel synthesis operator (`R_synth^MAR`, `Δh_vis = 45/64`), 64-bank `UnifiedStinespringHyperFrame` (`135,168 B` @ `0x70020000`), Mode II 4.2 K readout (`Q_readout = 4.0194 × 10⁻²³ J/bit`), compacted `SHBT-MAR-312C` nacelle (`2,257.70 kg`), `SHBT-IBR-312` magazine, 144-gate verification audit, 29 Z3 formal SMT proofs. |
+| [`shbt-sglt`](https://github.com/sys1own/shbt-sglt) | Synthetic Gravitational Lensing Telescope Stack | 2PN relativistic beam optics in harmonic coordinates, Two-Mode Squeezed Vacuum (TMSV) heterodyne metrology (`r = 2.50`, `21.715 dB`, noise ASD `S_r^{1/2} ≤ 0.010 pm/√Hz`), 5th-order minimum-jerk flight profiles (`||s'''|| ≤ 5.7735`), SE-L2 formation flight, CVD Diamond-on-GaN thermal dissipation, 70-gate verification audit, 14 Z3 proofs. |
+| [`shbt-exotic`](https://github.com/sys1own/shbt-exotic) | Multi-Protocol Spacetime Engineering Co-Simulation | Cross-protocol metric coupling across all 6 phenomena (warp + stasis + translocation + wells + comms + quine), Ford–Roman Quantum Inequality (QI) dark-ledger auditing, Heegaard–Floer symplectic boundary relabeling (`T^∂_ij ∈ Sp(2g, Z)`), dynamic 5-stage relativistic PDE solvers, 70-gate verification audit + 80-EXT checks, 8 Z3 formal proofs. |
+| [`shbt-warp`](https://github.com/sys1own/shbt-warp) | Holographic Warp Drive Digital Twin & 3+1D ADM Engine | 3+1D Alcubierre metric foliation (`α = 1.0`, `γ_ij = δ_ij`, `β^x = -v_s exp(Δ_mod/2) f_SHBT`), 4th-Gen `SHBT-MAR-312` (`4,096.99 kg`) / compacted `SHBT-MAR-312C` (`2,257.70 kg`, `0.8589 m³`) / 5th-Gen `SHBT-MAR-312X` (`950.00 kg`, `0.3500 m³`, `25.00 EW`, `2,482,950c`) mass-annihilation reactors, `SHBT-IBR-312` magazine (`41 cores / 1,378.06 EJ`), `SHBT-EW-312` Effective Traversable Wormhole System (`89.6c → 2,482,950c`, `8.957-hour` Andromeda M31 transit), 221-gate verification audit, 28 Z3 formal proofs. |
+| [`shbt-swarm`](https://github.com/sys1own/shbt-swarm) | Autonomous Interstellar Von Neumann Swarm Architecture | Macroscopic anyon-braid quine cloning (`R_clone^SWARM`, `13.418 ms` Jump-Cruiser ship replication), non-Hermitian PT-GoI optical template imprinting (`54.432 ps`), `SHBT-STEN` cognitive solver & Proof-Carrying CBF Xenobiological Safety Shield (Classes M0, X0, X1, X2), `R_univ^SWARM` universal 230-space-group matter folding (202.55 Mt planetary synthesis, `11.40 μs` Mode 1c direct breeding), 5th-Gen `SHBT-MAR-312X` autopoietic reactor (`950.00 kg`, `0.3500 m³`, `25.00 EW`, `99.200%` `SHBT-DEC-X`, `37,016.7×` sensible heat reduction), 104-gate verification audit, 20 Z3 formal SMT proofs. |
 
-The following table details the bidirectional technology-transfer contracts between `shbt-ghost` and each ecosystem peer:
+### Architectural Lineage & Foundations Provided to shbt-swarm
 
-| Repository | Domain Role | Inter-Repository Integration with `shbt-ghost` |
-| :--- | :--- | :--- |
-| [`sys1own/shbt-ghost`](https://github.com/sys1own/shbt-ghost) | Ghost Seed Propulsion & Metric Twin | **Canonical repository.** Simulates topological mass generation (`M_seed = alpha_seed * DeltaN`), reactionless traction vectoring, 1g artificial gravity synthesis, 3+1 CCZ4 numerical spacetime foliation, sub-2.50 ns PCSS / GaN quench protection, and 94.20% SiC energy recovery. |
-| [`sys1own/shbt-exotic`](https://github.com/sys1own/shbt-exotic) | Boundary CFT Foundations & Dark Ledger | Upstream authority for Boundary Conformal Field Theory state vectors, Heegaard-Floer symplectic boundary relabeling (`Sp(2g, Z)`), and Kojima entropy invariance (`Ent = 0`, `Delta S_A = 0`). Supplies the mass coupling constant `alpha_seed = 1.3258316e-51 M_sun/bit`, linear superposition equations, eigenvector rigidity (`|mu_comp - mu_0| <= 1e-12`), and the congestion horizon `R_congestion = 2.954e15 m`. |
-| [`sys1own/shbt-precision`](https://github.com/sys1own/shbt-precision) | Arbitrary-Precision Math & Cosmology | Supplies the canonical WZW affine boundary branch `(26, 8, 312)` with integer center lifts `(I_l, I_q) = (6, 13)`, vanishing framing defect `Delta_fr = 0`, and the 2,901,360-module dark Weil pairing `(S_dark, T_dark, M_dark = I_2901360)`. Supplies 512-bit arbitrary-precision floating-point arithmetic (`rug`/MPFR, 492-bit mantissa) and computes the exact Landauer entropy debt baseline `P_debt = 906.00 kW`. |
-| [`sys1own/shbt-sglt`](https://github.com/sys1own/shbt-sglt) | SGLT Telescope & Relativistic Optics | Co-developed optical and formation-flight suite. Supplies two-mode squeezed vacuum (TMSV) laser interferometry (`r = 2.50`, 21.715 dB, `sigma_r <= 0.144 pm/sqrt(Hz)`), 5th-order minimum-jerk kinematics (`max s'' = 5.7735`), and PINN wave-optics deconvolution. In return, `shbt-ghost` provides multi-seed metric superposition, Gundlach-damped CCZ4 numerical relativity, reactionless traction drive logic, and closed-loop C6 coronagraph controllers (`C <= 1e-10`). |
-| [`sys1own/shbt-qc`](https://github.com/sys1own/shbt-qc) | Bare-Metal Microkernel & Photonic QC | Canonical authority for the freestanding C11 `shbt-os` microkernel runtime, the normative 56-byte `SHBT-MMIO-1` register map at `0x70000000`, the 2,112-byte `.stinespring_frame` SRAM layout, SECDED Hamming(72,64) ECC scrubbing, and AVX-512 real-time Givens vector remapping. Supplies InP/InGaAs photonic integrated circuit (PIC) PDK rules and Touchstone S2P RF interposer export standards. |
-| [`sys1own/shbt-cf`](https://github.com/sys1own/shbt-cf) | Cold Fusion Authority & Power Ledger | Canonical power source for `shbt-ghost`. Specifies the 1,800-module LANR starter grid generating `999.054 kW_net` (`555.03 W` DC/cell, 33.804% TEG efficiency) to continuously balance the 906.00 kW Landauer debt with `+93.054 kW` operational margin. Supplies McNabb-Foster deuterium kinetics (`McnabbFosterSolver`) and two-phase Eulerian-Eulerian boiling models with Chaboche backstress cold-plate thermal fatigue analysis. `shbt-ghost` returns sub-2.50 ns PCSS optical interlocks and 94.20% SiC recovery crowbars. |
-| [`sys1own/shbt-recon`](https://github.com/sys1own/shbt-recon) | Macroscopic State Tracking & Causal GNC | Supplies macroscopic Stinespring dilation (`V_macro_unified` over `N ~ 10^20` to `10^28` particles) partitioning states into active residual (`eta_A = 10/33`, 640 B) and dark ledger (`eta_D = 23/33`, 1,472 B, 124 braids). Supplies 2PN harmonic metric formulations and causal lightcone authorization (`Delta s^2_2PN <= 0`) mapped to `SHBT-MMIO-1` (`0x28`–`0x2C`), as well as high-throughput lock-free POSIX SPSC shared-memory telemetry rings and 128-byte dual-cacheline C-ABI alignment conventions. |
-| [`sys1own/shbt-power`](https://github.com/sys1own/shbt-power) | Master Fusion Twin & Systems Integration | Master commercial aneutronic fusion platform (`p-11B` Graser power plant, 8,750 MW fusion / 7,832.903 MW net export). Directly integrates `shbt-ghost`'s sub-2.50 ns PCSS trigger logic, 94.20% SiC inductive recovery crowbars, and real-time ADM 3+1 metric stabilization routines (`beta^i -> 0`, `|det(g) + 1| <= 1e-12`). Reuses `ghost-multiseed-gravity`'s 3D tensor field projection for diamagnetic plasma fireball expansion against superconducting magnetic cushions, and harmonizes with the 70-gate verification harness. |
-| [`sys1own/shbt-warp`](https://github.com/sys1own/shbt-warp) | Holographic Warp Drive & Spacetime Engine | **Direct logic transfer.** `shbt-ghost` transfers its 3+1 hyperbolic CCZ4 numerical relativity solver with Gundlach constraint damping (κ<sub>1</sub> = 0.15, κ<sub>2</sub> = 0.0) and sub-2.5 ns PCSS optical crowbar interlock (94.20% SiC inductive recovery) into `shbt-warp`. In return, `shbt-warp` provides smooth Alcubierre shape functions f<sub>SHBT</sub>(r) and coordinate stress-energy tensors. |
+`shbt-ghost` provides the numerical relativity, ultrafast crowbar interlocks, and matter-harvesting mechanics underlying the operational safety of [`sys1own/shbt-swarm`](https://github.com/sys1own/shbt-swarm):
+1. **3+1D CCZ4 Numerical Relativity with Gundlach Damping:** The hyperbolic constraint-damping formulation (`κ₁ = 0.15, κ₂ = 0.0`) developed in `shbt-ghost` maintains numerical and physical metric stability across dynamic spacetime transformations, enforcing `||Θ||_∞ ≤ 10⁻⁸` during swarm transit.
+2. **Sub-2.5 ns Optical Crowbars & Inductive Recovery:** `shbt-ghost`'s photoconductive semiconductor switch (PCSS) technology and 94.20% SiC inductive recovery shunts provided the engineering baseline for `shbt-swarm`'s sub-picosecond (`1.701 ps`) PT-symmetric optical crowbar switches and 99.88% SMES energy recovery ring.
+3. **Stand-Off Bondi–Hoyle Mass Harvesting:** The gravitational accretion and reactionless metric screening algorithms from `shbt-ghost` form the operational foundation for `shbt-swarm` Phase 2 in-situ interstellar feedstock capture and Proof-Carrying Control Barrier Function (CBF) Xenobiological Triage (Classes M0, X0, X1, X2).
+
+In return, `shbt-swarm` closes the loop back into `shbt-ghost` by contributing monolithic 4D Weyl-polariton time-crystals and autopoietic self-healing circuits, reducing crowbar quench time to 1.701 ps (1,470× faster) and ensuring zero-degradation continuous metric stabilization.
 
 ### Upstream Subsystem Crosswalk Details
 
